@@ -5,6 +5,7 @@ html, body {
 }
  
 #flex-container {
+    background-color: rgb(256, 256, 256, 0.8);
     font-size: 1.1em;
     display: flex;
     flex-flow: column;
@@ -12,21 +13,23 @@ html, body {
     width: 100%;
 } 
 header {
+    font-size: 1em;
     padding: 10px 0px 5px 15px;
 }
 
 
 #codeArea {
     overflow:scroll;
-    height: 60vh;
-    font-size: 1.1em;
+    height: 70vh;
+    font-size: 1em;
     padding: 0px 0px 10px 15px;
 }
 #codeInput {
     border: none;
     border-color: transparent;
+    background: none;
     font-family: monospace;
-    font-size: 1.1em;
+    font-size: 1em;
     width: 95%;
 }
 #codeInput:focus {
@@ -48,21 +51,27 @@ header {
 }
 
 .example {
+    font-size: 0.9em;
     width: max(900px, 100vw);
     table-layout: auto;
     overflow: scroll;
-    overflow-x: scroll;
     padding: 0px 5px;
     border-left: 3px solid black;
 }
 
 footer {
+    font-size: 0.8em;
     min-width: 1000px;
     padding: 5px;
-    background: rgb(241, 241, 241);
+    background-color: rgb(200, 200, 200, 0.5);
     flex: 2;
 }
 code {
     background-color:  none;
     color: crimson;
+}
+
+.meme {
+    background: url("https://scontent-ort2-1.xx.fbcdn.net/v/t1.0-9/46488240_571637023286850_2734206047836176384_n.jpg?_nc_cat=106&_nc_sid=8024bb&_nc_oc=AQmOQYAc1kTE3E6PwSs2LewCdgMEaWk7trEeo97zVDPyhDnKxqOnVzEN2ECDLkm6ITk&_nc_ht=scontent-ort2-1.xx&oh=e79db62804edc041fac07dc0fe83aa35&oe=5ED9A242&dl=1");
+    background-size: cover;
 }

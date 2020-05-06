@@ -9,6 +9,7 @@ codeInput.focus();
 const helpText = [
     `xen v. ${version}, © 2020 Stephen Karukas\n`,
     "clear        clear the console",
+    "ans          stores the previous answer",
     "a$b          an ET interval ('a' steps in 'b'-ET)",
     "et(a, b)     an ET interval ('a' steps in 'b'-ET)",
     "a:b          a frequency ratio",
@@ -90,21 +91,37 @@ function evaluateXenExpr() {
     if (inputExpr == 'clear') {
         // clear the feed
         resultFeed.innerHTML = "";
-    } else if (inputExpr == 'xen') {
-        appendNewDiv("error", "hell yeah");
+    } else if (inputExpr == 'meme') {
+        let i = 5;
+        // act like an idiot
+        appendNewDiv("error", "XERR_FATAL: A fatal error occured while attempting " +
+                              "to access symbol $meme stored at memory address 0x9400-0x97FF. " +
+                              `Rebooting local machine in ${i} seconds...`);
+        appendNewDiv("error", ``);
+        let interval = setInterval(() => {
+            if (i == 0) {
+                clearInterval(interval);
+                appendNewDiv("help", "meme");
+                document.body.classList.add("meme");
+            } else {
+                appendNewDiv("error", `${--i} seconds...`);
+            }
+        }, 1000);
+        
     } else if (inputExpr == 'help') {
         // display documentation
         displayHelp();
         pastInputs.push(inputExpr);
     } else {
         try {
+            // not case sensitive
+            inputExpr = inputExpr.toLowerCase();
             if (inputExpr == "$" || inputExpr == ":") {
-                // convert the previous expression
-                let lastInput = pastInputs[pastInputs.length - 1];
-                if (lastInput != undefined) {
-                    inputExpr += " " + lastInput;
-                    result = evaluate(inputExpr);
-                }
+                // convert the previous answer with prefix operator
+                result = evaluate(inputExpr + " ans");
+            } else if (inputExpr == "c" || inputExpr == "hz") {
+                // convert the previous answer with postfix operator
+                result = evaluate("ans " + inputExpr);
             } else {
                 // evaluate the current expression
                 result = evaluate(inputExpr);

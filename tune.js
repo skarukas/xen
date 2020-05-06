@@ -242,7 +242,7 @@
             return interval.errorInET(base);
         }
         cents() {
-            return ETPitch.middleC.intervalTo(this).normalized().cents();
+            return (new ETPitch(0)).intervalTo(this).cents();
         }
         connect(other, by) {
             let result = new TreeComponent(this);
@@ -309,7 +309,7 @@
         /** or a custom name. */
         set name(val) { this.__name__ = val; }
         noteAbove(interval) {
-            let copy = new Frequency(this.freq);
+            let copy = new this.constructor(this.freq);
             copy.transposeBy(interval);
             return copy;
         }
@@ -581,12 +581,12 @@
         }
         mod(modulus) {
             let other = modulus.asET(this.base), remainder = Util.mod(this.n, other.n);
-            return new ETInterval(remainder, this.d);
+            return new this.constructor(remainder, this.d);
         }
         multiply(factor) {
             if (isNaN(factor))
                 throw new RangeError("Factors must be numeric.");
-            return new ETInterval(this.n * factor, this.d);
+            return new this.constructor(this.n * factor, this.d);
         }
         asFrequency() {
             let decimal = Math.pow(2, (this.steps / this.base));
@@ -599,11 +599,11 @@
             return new ETInterval(this.frac.decimal() * base, base);
         }
         inverse() {
-            return new ETInterval(-this.n, this.d);
+            return new this.constructor(-this.n, this.d);
         }
         add(other) {
             let _other = other.asET(this.base);
-            return new ETInterval(this.n + _other.n, this.base);
+            return new this.constructor(this.n + _other.n, this.base);
         }
     }
 
@@ -631,7 +631,7 @@
         set name(val) { this.__name__ = val; }
         /** Creates a `FreqRatio` from a `Fraction`. */
         static fromFraction(frac) {
-            return new FreqRatio(frac.n, frac.d);
+            return new this.constructor(frac.n, frac.d);
         }
         /** Returns the largest prime number involved in the ratio. */
         largestPrimeFactor() {
@@ -648,12 +648,12 @@
         }
         mod(modulus) {
             let decimalBase = modulus.asFrequency().decimal(), remainder = Util.powerMod(this.decimal(), decimalBase);
-            return new FreqRatio(remainder);
+            return new this.constructor(remainder);
         }
         multiply(factor) {
             if (isNaN(factor))
                 throw new RangeError("Factors must be numeric.");
-            return new FreqRatio(Math.pow(this.n, factor), Math.pow(this.d, factor));
+            return new this.constructor(Math.pow(this.n, factor), Math.pow(this.d, factor));
         }
         asFrequency() { return this; }
         asET(base = 12) {
@@ -661,7 +661,7 @@
             return new ETInterval(num, base);
         }
         inverse() {
-            return new FreqRatio(this.d, this.n);
+            return new this.constructor(this.d, this.n);
         }
         add(other) {
             let ratio = other.asFrequency(), product = this.frac.times(ratio.frac);
