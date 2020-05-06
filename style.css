@@ -1,0 +1,68 @@
+html, body {
+    margin: 0px;
+    height: 100%;
+    font-family: monospace;
+}
+ 
+#flex-container {
+    font-size: 1.1em;
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+    width: 100%;
+} 
+header {
+    padding: 10px 0px 5px 15px;
+}
+
+
+#codeArea {
+    overflow:scroll;
+    height: 60vh;
+    font-size: 1.1em;
+    padding: 0px 0px 10px 15px;
+}
+#codeInput {
+    border: none;
+    border-color: transparent;
+    font-family: monospace;
+    font-size: 1.1em;
+    width: 95%;
+}
+#codeInput:focus {
+    outline-width: 0;
+}
+
+/* Code input colors */
+.inputExpression {
+    color: black;
+}
+.output, .comment {
+    color: gray;
+}
+.help {
+    color: green;
+}
+.error {
+    color: rgb(185, 72, 72);
+}
+
+.example {
+    width: max(900px, 100vw);
+    table-layout: auto;
+    overflow: scroll;
+    overflow-x: scroll;
+    padding: 0px 5px;
+    border-left: 3px solid black;
+}
+
+footer {
+    min-width: 1000px;
+    padding: 5px;
+    background: rgb(241, 241, 241);
+    flex: 2;
+}
+code {
+    background-color:  none;
+    color: crimson;
+}

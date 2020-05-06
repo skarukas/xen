@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Xenharmonic Calculator</title>
+        <link rel="stylesheet" href="style.css"/>
+    </head>
+    <body>
+        <div id="flex-container">
+            <div id="code-container">
+                <header><strong>xen console</strong> - math with intervals</header>
+                <div id="codeArea">
+                    <div id="result"></div>
+                    <div>&gt; <input type="text" id="codeInput" size="20" spellcheck="false"/></div>
+                </div>
+            </div>
+            <footer>
+                Here's my footer with all of my <code>examples</code>
+                <table class="example">
+                    <tr>
+                        <td class="inputExpression">&gt; syntonicComma = (fifth * 4 - third) % octave</td>
+                        <td class="comment">calculate a comma and keep it smaller than an octave</td>
+                    </tr>
+                    <tr>
+                        <td class="inputExpression">&gt; syntonicComma</td>
+                        <td class="comment">get the value of the variable</td>
+                    </tr>
+                    <tr>
+                        <td class="output">81:80</td>
+                    </tr>
+                    <tr>
+                        <td class="inputExpression">&gt; $</td>
+                        <td class="comment">get the 12ET value of the previous answer</td>
+                    </tr>
+                    <tr>
+                        <td class="output">0.22 [12ET]</td>
+                    </tr>
+                    <tr>
+                        <td class="inputExpression">&gt; cents(4 - 5:4)</td>
+                        <td class="comment">5:4 "error" in 12ET</td>
+                    </tr>
+                    <tr>
+                        <td class="output">13.69</td>
+                    </tr>
+                    <tr>
+                        <td class="inputExpression">&gt; cents(7$19 - 5:4)</td>
+                        <td class="comment">5:4 "error" in 19ET</td>
+                    </tr>
+                    <tr>
+                        <td class="output">55.79</td>
+                    </tr>
+                </table>
+            </footer>
+        </div>
+        
+
+        <script src="tune.js"></script>
+        <script src="xen.js" type="module"></script>
+        <script src="calc.js" type="module"></script>
+    </body>
+</html>
