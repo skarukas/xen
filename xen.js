@@ -26,12 +26,24 @@ class Cents extends tune.ETInterval {
     }
 }
 
+class List extends Array {
+    constructor(...args) {
+        super(...args);
+    }
+    toString() {
+        return `'(${super.toString()})`;
+    }
+    static from(arrlike) {
+        return new List(...super.from(arrlike));
+    }
+}
+
 // change display
 tune.Frequency.prototype.toString = function() {
     return tune.Util.round(this.freq, 2) + "Hz";
 }
 tune.ETInterval.prototype.toString = function() {
-    return tune.Util.round(this.n, 2) + "$" + tune.Util.round(this.d, 2);
+    return tune.Util.round(this.n, 2) + "#" + tune.Util.round(this.d, 2);
 }
 
 function isInterval(a) {
@@ -48,6 +60,9 @@ xen.add = function(a, b) {
             else return a.asET();
         }
 
+        // invert arguments for list map
+        if (displayType(b) == 'list' && displayType(a) != 'list') return mapList(xen.add)(b, a);
+
         // both numbers, just add
         if (typeof a == "number" && typeof b == "number") return a + b;
         
@@ -58,10 +73,8 @@ xen.add = function(a, b) {
         if (displayType(b) == "freq" && isInterval(a)) return b.noteAbove(a);
         if (displayType(a) == "freq" && isInterval(b)) return a.noteAbove(b);
         if (displayType(a) == "freq" && displayType(b) == "freq") return tune.Frequency(a.freq + b.freq);
-        console.log(a, b);
         return a.add(b);
     } catch (e) {
-        console.log(e);
         throw new TypeError(`Ambiguous or incorrect call to +.
         ${givenVals(a, b)}`);
     }
@@ -90,6 +103,9 @@ xen.subtract = function(a, b) {
 
 xen.multiply = function(a, b) {
     assertDefined(2, arguments);
+
+    // invert arguments for list map
+    if (displayType(b) == 'list' && displayType(a) != 'list') return mapList(xen.multiply)(b, a);
     
     // both numbers, just multiply
     if (typeof a == "number" && typeof b == "number") return a * b;
@@ -143,6 +159,15 @@ xen.pow = function(a, b) {
     if (typeof a == "number" && typeof b == "number") return Math.pow(a, b);
     throw new TypeError(`Both arguments to ^ must be numbers.
     ${givenVals(a, b)}`);
+}
+
+xen.colon = function(a, b) {
+    assertDefined(1, arguments);
+    // creating compound ratios, e.g. 4:5:6:7:11
+    if (typeof b == 'number' && displayType(a) == 'ratio') return new List(a.inverse(), tune.FreqRatio(b, a.n));
+    if (typeof b == 'number' && displayType(a) == 'list')  return new List(...a, tune.FreqRatio(b, a[0].d));
+
+    else return mapList(xen.ratio)(a, b);
 }
 
 xen.ratio = function(a, b) {
@@ -219,6 +244,24 @@ xen.hertz = function(a) {
     }
 }
 
+xen.number = function(a) {
+    assertDefined(1, arguments);
+
+    try {
+        switch (displayType(a)) {
+            case "number": return a;
+            case 'et':     return a.asET().n;
+            case 'cents':  return a.cents();
+            case 'ratio':  throw "";
+            case 'freq':   return a.freq;
+            default:       throw "";
+        }
+    } catch (e) {
+        throw new TypeError(`Unable to convert to number.
+        ${givenVals(a)}`);
+    }
+}
+
 xen.mtof = function(a) {
     assertDefined(1, arguments);
 
@@ -256,6 +299,10 @@ xen.ftom = function(a, b) {
     }
 }
 
+xen.list = function(...args) {
+    return new List(...args);
+}
+
 function assertDefined(numArgs, argues) {
     let args = Array.from(argues);
     for (let i = 0; i < numArgs; i++) {
@@ -291,7 +338,8 @@ const typeMap = {
     "ETInterval": "et",
     "FreqRatio": "ratio",
     "Cents": "cents",
-    "Frequency": "freq"
+    "Frequency": "freq",
+    "List": "list"
 }
 
 
@@ -307,30 +355,53 @@ var variables = {
 
 var functions = {
     // numeric functions
-    sin: Math.sin,
-    cos: Math.cos,
-    tan: Math.cos,
-    asin: Math.asin,
-    acos: Math.acos,
-    atan: Math.atan,
-    abs: Math.abs,
-    round: Math.round,
-    ceil: Math.ceil,
-    floor: Math.floor,
-    log: Math.log,
-    exp: Math.exp,
-    sqrt: Math.sqrt,
+    sin: mapList(Math.sin),
+    cos: mapList(Math.cos),
+    tan: mapList(Math.cos),
+    asin: mapList(Math.asin),
+    acos: mapList(Math.acos),
+    atan: mapList(Math.atan),
+    abs: mapList(Math.abs),
+    round: mapList(Math.round),
+    ceil: mapList(Math.ceil),
+    floor: mapList(Math.floor),
+    log: mapList(Math.log),
+    exp: mapList(Math.exp),
+    sqrt: mapList(Math.sqrt),
     max: Math.max,
     min: Math.min,
-    random: Math.random,
+    random: (n) => {
+        if (!n) return Math.random();
+        let result = new List();
+        while (n-- > 0) result.push(Math.random());
+        return result;
+    },
+    // xen constructors
+    ratio: mapList(xen.ratio),
+    et: mapList(xen.et),
+    cents: mapList(xen.cents),
+    freq: mapList(xen.hertz),
+    number: mapList(xen.number),
+    list: xen.list,
+    "'": xen.list,
     // xen functions
-    ratio: xen.ratio,
-    et: xen.et,
-    cents: xen.cents,
-    freq: xen.hertz,
-    mtof: xen.mtof,
-    ftom: xen.ftom
+    mtof: mapList(xen.mtof),
+    ftom: mapList(xen.ftom),
 };
+
+/**
+ * Takes a function and turns it into a version that applies 
+ * it to all elements if the first input is a list.
+ */
+function mapList(fn) {
+    return function (first, ...args) {
+        if (displayType(first) == 'list') {
+            return first.map((e) => fn(e, ...args));
+        } else {
+            return fn(first, ...args);
+        }
+    }
+}
 
 
 
@@ -338,7 +409,7 @@ var functions = {
 
 var lex = function(input) {
     var isOperator = function(c) {
-        return /[+\-*\/\^%=(),:\$]/.test(c);
+        return /[+\-*\/\^%=(),:\#]/.test(c);
         },
         isDigit = function(c) {
             return /[0-9]/.test(c);
@@ -469,7 +540,6 @@ var parse = function(tokens) {
             };
         });
     },
-    // attempt to define postfix operators??
     postfix = function (id, lbp, led) {
         symbol(id, lbp, null, led ||
         function (left) {
@@ -513,7 +583,7 @@ var parse = function(tokens) {
 
     // interval operators
     infix(":", 7.5);
-    infix("$", 7.5);
+    infix("#", 7.5);
     //unary operators
     prefix("-", 7);
     prefix("+", 7);
@@ -529,7 +599,7 @@ var parse = function(tokens) {
     infix("-", 3);
 
     prefix(":", 2.5);
-    prefix("$", 2.5);
+    prefix("#", 2.5);
 
     infix("=", 1, 2, function(left) {
         if (left.type === "call") {
@@ -571,8 +641,8 @@ var evaluate = function(parseTree) {
         "/": xen.divide,
         "%": xen.mod,
         "^": xen.pow,
-        ":": xen.ratio,
-        "$": xen.et,
+        ":": xen.colon,
+        "#": xen.et,
         "c": xen.cents,
         "hz": xen.hertz
     };
@@ -582,8 +652,10 @@ var evaluate = function(parseTree) {
     var parseNode = function(node) {
         if (node.type === "number") return node.value;
         else if (operators[node.type]) {
-            if (node.right && node.left) return operators[node.type](parseNode(node.left), parseNode(node.right)); // binary
-            return operators[node.type](parseNode(node.right || node.left)); // unary
+            // : is the only operator that does not map lists by default (due to compound ratio expansions)
+            let fn = (node.type == ':')? operators[node.type] : mapList(operators[node.type]);
+            if (node.right && node.left) return fn(parseNode(node.left), parseNode(node.right)); // binary
+            return fn(parseNode(node.right || node.left)); // unary
         }
         else if (node.type === "identifier") {
             var value = args.hasOwnProperty(node.value) ? args[node.value] : variables[node.value];
