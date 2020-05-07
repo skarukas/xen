@@ -79,6 +79,7 @@ xen.add = function(a, b) {
         if (displayType(b) == "freq" && isInterval(a)) return b.noteAbove(a);
         if (displayType(a) == "freq" && isInterval(b)) return a.noteAbove(b);
         if (displayType(a) == "freq" && displayType(b) == "freq") return tune.Frequency(a.freq + b.freq);
+        if (displayType(a) == "et" || displayType(b) == "et") return xen.et(a.add(b));
         return a.add(b);
     } catch (e) {
         throw new TypeError(`Ambiguous or incorrect call to +.

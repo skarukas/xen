@@ -16,7 +16,7 @@ xen.playback = function(freqs) {
         }
         let frac = (i+1) / (freqs.length + 1);
         let pan = frac * 2 * stereoWidth - stereoWidth;
-        let envelope = new ADSR(0.1, 0, 1, 1);
+        let envelope = new ADSR(0.2, 0, 1, 1);
         playNote(freq, 2, 0.5, envelope, pan);
     }
 }
@@ -55,19 +55,20 @@ let external = {
  * @param { Number } pan Stereo pan amount, -1 to 1 (L to R)
  */
 function playNote(f, dur, maxGain, envelope, pan) {
+    // create individual gain for enveloping
+    let oscGain = audioContext.createGain();
     // create oscillator
     let osc = audioContext.createOscillator();
     osc.type = "sawtooth";
     osc.frequency.value = f;
-    osc.start();
-    
-    // create individual gain for enveloping
-    let oscGain = audioContext.createGain();
 
     // create pan and set value
     let oscPan = audioContext.createPanner();
     oscPan.panningModel = 'HRTF';
     oscPan.setPosition(pan, 0, 1 - Math.abs(pan));
+
+    // patch together the audio nodes
+    osc.connect(oscPan).connect(oscGain).connect(filterNode);
 
     let begin = audioContext.currentTime;
     let end = audioContext.currentTime + dur;
@@ -75,11 +76,11 @@ function playNote(f, dur, maxGain, envelope, pan) {
     // ==== Gain Envelope ====
     envelope.start(oscGain.gain, 0, maxGain, begin);
     envelope.stop(oscGain.gain,  0,          end);
+    osc.start();
     osc.stop(end + envelope.release);
     
 
-    // patch together the audio nodes
-    osc.connect(oscPan).connect(oscGain).connect(filterNode);
+
 }
 
 class ADSR {
