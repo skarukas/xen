@@ -1,4 +1,6 @@
-import evaluate from "./xen.js";
+import xen from "./xen.js";
+import playback from "./xen-webaudio-playback.js";
+const evaluate = xen.evaluate;
 
 const version = "1.0.0";
 const resultFeed = document.getElementById("result");
@@ -30,14 +32,15 @@ const helpText = [
     " - Ex: 100c or -50 C",
     "[number]  xx    or  -x.xxxx",
     " - a number with no specific meaning",
-    " - N.B. numbers are interpreted as 12et's", 
+    " - N.B. numbers are generally interpreted as 12et's", 
     "     when combined with non-numbers",
     " - Ex: 10 or -1.34",
     "[list] '(...args) or  list(...args)",
     " - a list that can hold any number of any data type",
     " - for most operations, if a list is given as the first argument",
     "     the operation will be automatically mapped across the list",
-    " - Ex: '(4, 5, 6) * 2 = '(8, 10, 12)",
+    " - Ex: '(4, 5, 6) * 2  = '(8, 10, 12)",
+    "        4:5:6:7 #12    = '(3.86#12,7.02#12,9.69#12)",
     "",
     "type conversion can be done using one of two methods:",
     " 1. specify the type as a function",
@@ -46,16 +49,18 @@ const helpText = [
     " 2. use units following the values (freq and cents)",
     "    Ex: 60#12 Hz     = 261.63Hz",
     "    Ex: 3:2 c        = 701.96c",
-    "mtof(a)      convert a MIDI number to a frequency",
-    "ftom(a)      convert a frequency to a MIDI number",
-    "x = 10:9     define a variable",
     "",
-    "built in intervals:",
-    "  - octave: 12#12",
-    "  - fifth: 3:2",
-    "  - third: 5:4",
-    "  - seventh: 7:4",
-
+    "play(...args)  play back any number of things, including lists",
+    "               (numbers are interpreted as frequencies in Hz)",
+    "x = 10:9       define a variable",
+    "",
+    "built-in JI intervals (constants):",
+    "  octave    = 2:1",
+    "  fifth     = 3:2",
+    "  third     = 5:4",
+    "  seventh   = 7:4",
+    "",
+    "and much more! see https://github.com/skarukas/xen for full documentation."
 ];
 const helpString = helpText.reduce((rest, e) => rest + "\n" + e);
 
@@ -108,6 +113,7 @@ function appendNewDiv(className, text) {
  * Process the input and post the result.
  * */
 function evaluateXenExpr() {
+    playback.audioOn || playback.init();
     codeInput.placeholder = "";
     let inputExpr = codeInput.value;
     let result;
@@ -136,7 +142,6 @@ function evaluateXenExpr() {
     } else if (inputExpr == 'help') {
         // display documentation
         displayHelp();
-        pastInputs.push(inputExpr);
     } else {
         try {
             // not case sensitive
@@ -150,15 +155,18 @@ function evaluateXenExpr() {
             } else {
                 // evaluate the current expression
                 result = evaluate(inputExpr);
-                pastInputs.push(inputExpr);
+                //pastInputs.push(inputExpr);
             }
             if (result) appendNewDiv("output", result);
         } catch (e) {
             appendNewDiv("error", e);
-            pastInputs.push(inputExpr);
+            //pastInputs.push(inputExpr);
         }
     }
-
+    // reset input order
+    while (futureInputs.length) pastInputs.push(futureInputs.pop());
+    // add to stack
+    pastInputs.push(inputExpr);
     codeInput.value = "";
     codeInput.scrollIntoView();
 }

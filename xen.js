@@ -28,7 +28,13 @@ class Cents extends tune.ETInterval {
 
 class List extends Array {
     constructor(...args) {
-        super(...args);
+        if (args.length == 1) {
+            // prevent calling the Array(arrLength) constructor
+            super(1)
+            this[0] = args[0];
+        } else {
+            super(...args);
+        }
     }
     toString() {
         return `'(${super.toString()})`;
@@ -313,6 +319,72 @@ function assertDefined(numArgs, argues) {
     }
 }
 
+xen.play = function(...args) {
+    let C = tune.Frequency(261.63); // default to middle C
+    let baseFreq;
+    let freqs = [];
+
+    try {
+        // convert all to freqs and add them
+        processArgs(args);
+        // call the audio-producing function
+        external.playback(freqs);
+    } catch (e) {
+        throw e || new TypeError(`Ambiguous or incorrect call to play().
+        ${givenVals(...args)}`);
+    }
+
+    function processArgs(arr) {
+        let f;
+        for (let arg of arr) {
+            switch (displayType(arg)) {
+                case 'list':   
+                    processArgs(arg); // flatten the list
+                    break;
+                case 'et':
+                    // if small, interpret as an interval
+                    if (xen.hertz(arg).freq < 20) addRelative(arg);
+                    else addFixed(arg); // otherwise, convert to freq
+                    break;
+                // convert to freq
+                case 'number': 
+                case 'freq': 
+                    addFixed(arg);
+                    break;
+                // play above the base freq
+                case 'cents':  
+                case 'ratio':
+                    addRelative(arg);
+                    break;
+                default:
+                    throw "";
+            }
+        }
+        // interpret the value as a fixed freq
+        function addFixed(arg) {
+            f = xen.hertz(arg);
+            freqs.push(f.freq);
+            baseFreq = baseFreq || f;
+        }
+        // interpret the value as an interval
+        function addRelative(arg) {
+            // C = default
+            if (!baseFreq) {
+                // if no base frequency, use C and play it back
+                baseFreq = C;
+                freqs.push(xen.hertz(C).freq);
+            }
+            f = baseFreq.noteAbove(arg);
+            freqs.push(f.freq);
+        }
+    }
+}
+
+// default value for external.playback
+xen.playback = function(freqs) {
+    throw "play() is not supported in this implementation.";
+}
+
 /**
  * 
  * Template for Given: ..., ... (..., ...)
@@ -320,7 +392,7 @@ function assertDefined(numArgs, argues) {
 function givenVals(...args) {
     let result = "Given: ";
     args = args.filter(a => typeof a != 'undefined');
-    // value (Type)
+    // value (type)
     result += args.map((a) => `${a} (${displayType(a)})`).join(", ");
     return result;
 }
@@ -350,7 +422,7 @@ var variables = {
     fifth: tune.JI.fifth,
     third: tune.JI.third,
     seventh: tune.JI.seventh,
-    octave: tune.ETInterval(12)
+    octave: tune.FreqRatio(2)
 };
 
 var functions = {
@@ -387,6 +459,7 @@ var functions = {
     // xen functions
     mtof: mapList(xen.mtof),
     ftom: mapList(xen.ftom),
+    play: xen.play,
 };
 
 /**
@@ -686,10 +759,14 @@ var evaluate = function(parseTree) {
     var output = "";
     for (var i = 0; i < parseTree.length; i++) {
         var value = parseNode(parseTree[i]);
-        variables.ans = value;
-        // Adding type annotations to result
-        value += ` (${displayType(value)})`;
-        if (typeof value !== "undefined") output += value; 
+
+        if (typeof value !== "undefined") {
+            // store answer
+            variables.ans = value;
+            // add type annotations to result
+            value += ` (${displayType(value)})`;
+            output += value; 
+        }
     }
     return output;
 };
@@ -701,4 +778,8 @@ var calculate = function(input) {
 };
 
 
-export default calculate;
+const external = {
+    "evaluate": calculate, 
+    "playback": xen.playback
+}
+export default external;
