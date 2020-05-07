@@ -5,8 +5,10 @@ let audioContext;
 let filterNode;
 let masterGainNode;
 let stereoWidth = 0.8;
+let waveshape = "sawtooth";
 
-xen.playback = function(freqs) {
+xen.playback = function(freqs, shape) {
+    waveshape = shape || waveshape;
     //audioOn || initAudio();
     for (let i = 0; i < freqs.length; i++) {
         let freq = freqs[i];
@@ -59,7 +61,7 @@ function playNote(f, dur, maxGain, envelope, pan) {
     let oscGain = audioContext.createGain();
     // create oscillator
     let osc = audioContext.createOscillator();
-    osc.type = "sawtooth";
+    osc.type = waveshape;
     osc.frequency.value = f;
 
     // create pan and set value

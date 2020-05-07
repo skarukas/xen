@@ -324,12 +324,13 @@ xen.play = function(...args) {
     let C = tune.Frequency(261.63); // default to middle C
     let baseFreq;
     let freqs = [];
+    let waveshape;
 
     try {
         // convert all to freqs and add them
         processArgs(args);
         // call the audio-producing function
-        external.playback(freqs);
+        external.playback(freqs, waveshape);
     } catch (e) {
         throw e || new TypeError(`Ambiguous or incorrect call to play().
         ${givenVals(...args)}`);
@@ -339,6 +340,9 @@ xen.play = function(...args) {
         let f;
         for (let arg of arr) {
             switch (displayType(arg)) {
+                case 'waveshape':
+                    waveshape = arg.description;
+                    break;
                 case 'list':   
                     processArgs(arg); // flatten the list
                     break;
@@ -412,9 +416,16 @@ const typeMap = {
     "FreqRatio": "ratio",
     "Cents": "cents",
     "Frequency": "freq",
-    "List": "list"
+    "List": "list",
+    "Symbol": "waveshape"
 }
 
+var waves = {
+    saw: Symbol("sawtooth"),
+    tri: Symbol("triangle"),
+    sine: Symbol("sine"),
+    square: Symbol("square"),
+}
 
 var variables = {
     ans: undefined,
@@ -423,7 +434,14 @@ var variables = {
     fifth: tune.JI.fifth,
     third: tune.JI.third,
     seventh: tune.JI.seventh,
-    octave: tune.FreqRatio(2)
+    octave: tune.FreqRatio(2),
+    sawtooth: waves.saw,
+    saw: waves.saw,
+    sine: waves.sine,
+    triangle: waves.tri,
+    tri: waves.tri,
+    square: waves.square,
+    rect: waves.square,
 };
 
 var functions = {
@@ -762,11 +780,13 @@ var evaluate = function(parseTree) {
         var value = parseNode(parseTree[i]);
 
         if (typeof value !== "undefined") {
+            let answer = value;
             // store answer
             variables.ans = value;
+            if (typeof value == 'symbol') answer = value.description;
             // add type annotations to result
-            value += ` (${displayType(value)})`;
-            output += value; 
+            answer += ` (${displayType(value)})`;
+            output += answer; 
         }
     }
     return output;
