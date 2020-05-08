@@ -233,7 +233,7 @@ xen.cents = function(a) {
     }
 }
 
-xen.hertz = function(a) {
+xen.freq = function(a) {
     assertDefined(1, arguments);
 
     try {
@@ -310,12 +310,40 @@ xen.list = function(...args) {
     return new List(...args);
 }
 
-function assertDefined(numArgs, argues) {
-    let args = Array.from(argues);
-    for (let i = 0; i < numArgs; i++) {
-        if (typeof args[i] == 'undefined') {
-            throw `Expected ${numArgs} argument(s).
-            ${givenVals(...args)}`;
+xen.approxpartials = function(...args) {
+    // flatten args and convert to freq
+    args = args.flat(Infinity).map((e) => xen.freq(e).freq); 
+    // find best fit
+    let result = tune.AdaptiveTuning.bestFitPartialsFromFreq(args);
+    let f = xen.freq(result.fundamental);
+    let ratios = List.from(result.partials.map((e) => xen.ratio(e)));
+    return new List(f, ratios);
+}
+
+xen.just = function(...args) {
+    args = args.flat(Infinity);
+    if (args.length) {
+        let type = displayType(args[0]);
+        // allow ratios in thru hacks
+        if (type == 'ratio')  {
+            args = args.map((e) => xen.et(e));
+            args.push(tune.ETInterval(0));
+        }
+
+        let [f, ratios] = xen.approxpartials(args);
+
+        if (type == 'ratio') {
+            // more hacks
+            let denom = ratios.pop();
+            return ratios.map((r) => xen.subtract(r, denom));
+        } else {
+            return ratios.map((r) => {
+                // add and convert back to original type
+                console.log(sum);
+    
+                let sum = xen.add(r, f);
+                return xen[type](sum);
+            }); 
         }
     }
 }
@@ -348,7 +376,7 @@ xen.play = function(...args) {
                     break;
                 case 'et':
                     // if small, interpret as an interval
-                    if (xen.hertz(arg).freq < 20) addRelative(arg);
+                    if (xen.freq(arg).freq < 20) addRelative(arg);
                     else addFixed(arg); // otherwise, convert to freq
                     break;
                 // convert to freq
@@ -367,7 +395,7 @@ xen.play = function(...args) {
         }
         // interpret the value as a fixed freq
         function addFixed(arg) {
-            f = xen.hertz(arg);
+            f = xen.freq(arg);
             freqs.push(f.freq);
             baseFreq = baseFreq || f;
         }
@@ -377,7 +405,7 @@ xen.play = function(...args) {
             if (!baseFreq) {
                 // if no base frequency, use C and play it back
                 baseFreq = C;
-                freqs.push(xen.hertz(C).freq);
+                freqs.push(xen.freq(C).freq);
             }
             f = baseFreq.noteAbove(arg);
             freqs.push(f.freq);
@@ -388,6 +416,16 @@ xen.play = function(...args) {
 // default value for external.playback
 xen.playback = function(freqs) {
     throw "play() is not supported in this implementation.";
+}
+
+function assertDefined(numArgs, argues) {
+    let args = Array.from(argues);
+    for (let i = 0; i < numArgs; i++) {
+        if (typeof args[i] == 'undefined') {
+            throw `Expected ${numArgs} argument(s).
+            ${givenVals(...args)}`;
+        }
+    }
 }
 
 /**
@@ -471,7 +509,7 @@ var functions = {
     ratio: mapList(xen.ratio),
     et: mapList(xen.et),
     cents: mapList(xen.cents),
-    freq: mapList(xen.hertz),
+    freq: mapList(xen.freq),
     number: mapList(xen.number),
     list: xen.list,
     "'": xen.list,
@@ -479,6 +517,8 @@ var functions = {
     mtof: mapList(xen.mtof),
     ftom: mapList(xen.ftom),
     play: xen.play,
+    approxpartials: xen.approxpartials,
+    just: xen.just
 };
 
 /**
@@ -736,7 +776,7 @@ var evaluate = function(parseTree) {
         ":": xen.colon,
         "#": xen.et,
         "c": xen.cents,
-        "hz": xen.hertz
+        "hz": xen.freq
     };
 
     var args = {};

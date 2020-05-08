@@ -8,61 +8,62 @@ const codeInput = document.getElementById("codeInput");
 codeInput.placeholder=`xen v. ${version}: type 'help' for brief documentation`;
 codeInput.focus();
 
-const helpText = [
-    `xen v. ${version}, © 2020 Stephen Karukas\n`,
-    "clear        clear the console",
-    "ans          stores the previous answer",
-    "",
-    "xen contains 6 data types: et, ratio, freq, cents, number, and list.",
-    "generally, math may be performed freely between all types.",
-    "  (xen handles the type conversions automatically)",
-    "[et]      a#b   or  et(a, b)",
-    " - an ET interval ('a' steps in 'b'-ET)",
-    " - Ex: 2#12 or 6#19",
-    "[ratio]   a:b   or  ratio(a, b)",
-    " - a frequency ratio",
-    " - Ex: 5:4 or 3:2",
-    " - compound ratio shorthand:",
-    "   - 4:5:6:7 = '(5:4, 6:4, 7:4)",
-    "[freq]    x Hz  or  hertz(x)",
-    " - a frequency in Hz",
-    " - Ex: 100Hz or 10 hz",
-    "[cents]   x c   or  cents(x)",
-    " - an interval in cents",
-    " - Ex: 100c or -50 C",
-    "[number]  xx    or  -x.xxxx",
-    " - a number with no specific meaning",
-    " - N.B. numbers are generally interpreted as 12et's", 
-    "     when combined with non-numbers",
-    " - Ex: 10 or -1.34",
-    "[list] '(...args) or  list(...args)",
-    " - a list that can hold any number of any data type",
-    " - for most operations, if a list is given as the first argument",
-    "     the operation will be automatically mapped across the list",
-    " - Ex: '(4, 5, 6) * 2  = '(8, 10, 12)",
-    "        4:5:6:7 #12    = '(3.86#12,7.02#12,9.69#12)",
-    "",
-    "type conversion can be done using one of two methods:",
-    " 1. specify the type as a function",
-    "    Ex: et(5:4)      = 3.86#12",
-    "    Ex: cents(4#12)  = 400c",
-    " 2. use units following the values (freq and cents)",
-    "    Ex: 60#12 Hz     = 261.63Hz",
-    "    Ex: 3:2 c        = 701.96c",
-    "",
-    "play(...args)  play back any number of things, including lists",
-    "               (numbers are interpreted as frequencies in Hz)",
-    "x = 10:9       define a variable",
-    "",
-    "built-in JI intervals (constants):",
-    "  octave    = 2:1",
-    "  fifth     = 3:2",
-    "  third     = 5:4",
-    "  seventh   = 7:4",
-    "",
-    "and much more! see https://github.com/skarukas/xen for full documentation."
-];
-const helpString = helpText.reduce((rest, e) => rest + "\n" + e);
+const helpString = 
+`xen v. ${version}, © 2020 Stephen Karukas
+clear        clear the console
+ans          stores the previous answer
+
+xen contains 6 data types: et, ratio, freq, cents, number, and list.
+generally, math may be performed freely between all types (xen handles the type conversions automatically).
+
+[et]      a#b   or  et(a, b)
+ - an ET interval ('a' steps in 'b'-ET)
+ - Ex: 2#12 or 6#19
+[ratio]   a:b   or  ratio(a, b)
+ - a frequency ratio
+ - Ex: 5:4 or 3:2
+ - compound ratio shorthand:
+   - 4:5:6:7 = '(5:4, 6:4, 7:4)
+[freq]    x Hz  or  freq(x)
+ - a frequency in Hz
+ - Ex: 100Hz or 10 hz
+[cents]   x c   or  cents(x)
+ - an interval in cents
+ - Ex: 100c or -50 C
+[number]  xx    or  -x.xxxx
+ - a number with no specific meaning
+ - N.B. numbers are generally interpreted as 12et's
+     when combined with non-numbers
+ - Ex: 10 or -1.34
+[list] '(...args) or  list(...args)
+ - a list that can hold any number of any data type
+ - for most operations, if a list is given as the first argument
+     the operation will be automatically mapped across the list
+ - Ex: '(4, 5, 6) * 2  = '(8, 10, 12)
+        4:5:6:7 #12    = '(3.86#12,7.02#12,9.69#12)
+
+type conversion can be done using one of two methods:
+ 1. specify the type as a function
+    Ex: et(5:4)      = 3.86#12
+    Ex: cents(4#12)  = 400c
+ 2. use units following the values (freq and cents)
+    Ex: 60#12 Hz     = 261.63Hz
+    Ex: 3:2 c        = 701.96c
+
+play(...args)  play back any number of things, including lists
+               (numbers are interpreted as frequencies in Hz)
+just(...args)  adaptively tune the args to fit the harmonic series
+               (numbers are interpreted as frequencies in Hz)
+x = 10:9       define a variable
+
+built-in JI interval variables:
+  octave    = 2:1
+  fifth     = 3:2
+  third     = 5:4
+  seventh   = 7:4
+
+and much more! see https://github.com/skarukas/xen for full documentation.`;
+//const helpString = helpText.reduce((rest, e) => rest + "\n" + e);
 
 /**
  * Show the help text in a `pre` element.
