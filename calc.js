@@ -120,48 +120,24 @@ function evaluateXenExpr() {
     let result;
     appendNewDiv("inputExpression", `> ${inputExpr}`);
 
-    if (inputExpr == 'clear') {
-        // clear the feed
-        resultFeed.innerHTML = "";
-    } else if (inputExpr == 'meme') {
-        let i = 5;
-        // act like an idiot
-        appendNewDiv("error", "XERR_FATAL: A fatal error occured while attempting " +
-                              "to access symbol $meme stored at memory address 0x9400-0x97FF. " +
-                              `Rebooting local machine in ${i} seconds...`);
-        appendNewDiv("error", ``);
-        let interval = setInterval(() => {
-            if (i == 0) {
-                clearInterval(interval);
-                appendNewDiv("help", "meme");
-                document.body.classList.add("meme");
-            } else {
-                appendNewDiv("error", `${--i} seconds...`);
-            }
-        }, 1000);
-        
-    } else if (inputExpr == 'help') {
-        // display documentation
-        displayHelp();
-    } else {
+    if (inputExpr == 'clear') resultFeed.innerHTML = "";
+    else if (inputExpr == 'meme') saaB();
+    else if (inputExpr == 'help') displayHelp();
+    else {
+        // evaluate xen code
         try {
             // not case sensitive
             inputExpr = inputExpr.toLowerCase();
-            if (inputExpr == "#" || inputExpr == ":") {
-                // convert the previous answer with prefix operator
-                result = evaluate(inputExpr + " ans");
-            } else if (inputExpr == "c" || inputExpr == "hz") {
-                // convert the previous answer with postfix operator
-                result = evaluate("ans " + inputExpr);
-            } else {
-                // evaluate the current expression
-                result = evaluate(inputExpr);
-                //pastInputs.push(inputExpr);
-            }
+            // convert the previous answer with prefix operator
+            if (inputExpr == "#" || inputExpr == ":") inputExpr = inputExpr + " ans";
+            // convert the previous answer with postfix operator
+            else if (inputExpr == "c" || inputExpr == "hz") inputExpr = "ans " + inputExpr;
+            // evaluate the current expression
+            result = evaluate(inputExpr);
+
             if (result) appendNewDiv("output", result);
         } catch (e) {
             appendNewDiv("error", e);
-            //pastInputs.push(inputExpr);
         }
     }
     // reset input order
@@ -170,4 +146,22 @@ function evaluateXenExpr() {
     pastInputs.push(inputExpr);
     codeInput.value = "";
     codeInput.scrollIntoView();
+}
+
+function saaB() {
+    let i = 5;
+
+    appendNewDiv("error", "XERR_FATAL: A fatal error occured while attempting " +
+                          "to access symbol $meme stored at memory address 0x9400-0x97FF. " +
+                          `Rebooting local machine in ${i} seconds...`);
+    appendNewDiv("error", ``);
+    let interval = setInterval(() => {
+        if (i == 0) {
+            clearInterval(interval);
+            appendNewDiv("help", "meme");
+            document.body.classList.add("meme");
+        } else {
+            appendNewDiv("error", `${--i} seconds...`);
+        }
+    }, 1000);
 }

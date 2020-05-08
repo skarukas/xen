@@ -339,8 +339,6 @@ xen.just = function(...args) {
         } else {
             return ratios.map((r) => {
                 // add and convert back to original type
-                console.log(sum);
-    
                 let sum = xen.add(r, f);
                 return xen[type](sum);
             }); 
