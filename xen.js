@@ -183,14 +183,22 @@ xen.colon = function(a, b) {
     assertDefined(1, arguments);
     // creating compound ratios, e.g. 4:5:6:7:11
     if (typeof b == 'number' && displayType(a) == 'ratio') return new List(a.inverse(), tune.FreqRatio(b, a.n));
-    if (typeof b == 'number' && displayType(a) == 'list')  return new List(...a, tune.FreqRatio(b, a[0].d));
+    if (typeof b == 'number' && displayType(a) == 'list' && displayType(a[0]) == 'ratio')  {
+        let result = new List();
+        // check that they're all ratios
+        for (let e of a) {
+            if (displayType(e) != 'ratio') throw "Unable to create compound ratio.";
+            result.push(e);
+        }
+        result.push(tune.FreqRatio(b, a[0].d));
+        return result;
+    }
 
     else return xen.ratio(a, b);
 }
 
 xen.ratio = elementWise(mapList(function(a, b) {
     assertDefined(1, arguments);
-
     try {
         if (typeof b == 'number' && typeof a != 'number') throw "";
         switch (displayType(a)) {
