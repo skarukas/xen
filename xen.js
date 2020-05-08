@@ -262,6 +262,8 @@ xen.freq = mapList(function(a) {
     }
 });
 
+xen.null = () => undefined;
+
 xen.number = mapList(function(a) {
     assertDefined(1, arguments);
 
@@ -580,7 +582,7 @@ function elementWise(fn) {
 
 var lex = function(input) {
     var isOperator = function(c) {
-        return /[+\-*\/\^%=(),:\#]/.test(c);
+        return /[+\-*\/\^%=(),:;\#]/.test(c);
         },
         isDigit = function(c) {
             return /[0-9]/.test(c);
@@ -791,6 +793,7 @@ var parse = function(tokens) {
         }
         else throw "Invalid lvalue";
     });
+    postfix(";", 1);
 
     var parseTree = [];
     while (token().type !== "(end)") {
@@ -814,7 +817,8 @@ var evaluate = function(parseTree) {
         ":": xen.colon,
         "#": xen.et,
         "c": xen.cents,
-        "hz": xen.freq
+        "hz": xen.freq,
+        ";": xen.null
     };
 
     var args = {};
