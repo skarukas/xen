@@ -117,7 +117,6 @@ function evaluateXenExpr() {
     playback.audioOn || playback.init();
     codeInput.placeholder = "";
     let inputExpr = codeInput.value;
-    let result;
     appendNewDiv("inputExpression", `> ${inputExpr}`);
 
     if (inputExpr == 'clear') resultFeed.innerHTML = "";
@@ -133,9 +132,11 @@ function evaluateXenExpr() {
             // convert the previous answer with postfix operator
             else if (inputExpr == "c" || inputExpr == "hz") inputExpr = "ans " + inputExpr;
             // evaluate the current expression
-            result = evaluate(inputExpr);
-
-            if (result) appendNewDiv("output", result);
+            let allResults = evaluate(inputExpr);
+            // display all returned values
+            for (let result of allResults) {
+                if (result) appendNewDiv("output", `${result.value} (${result.type})`);
+            }
         } catch (e) {
             appendNewDiv("error", e);
         }

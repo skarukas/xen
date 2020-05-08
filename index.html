@@ -42,9 +42,9 @@
                         </tr>
                         <tr>
                             <td class="inputExpression">et</td>
-                            <td class="comment">a#b</td>
+                            <td class="comment">a#b or #a</td>
                             <td class="comment">et(a, b)</td>
-                            <td class="comment">6#19</td>
+                            <td class="comment">60#12 or #60</td>
                         </tr>
                         <tr>
                             <td class="inputExpression">cents</td>
@@ -73,71 +73,10 @@
                         <tr>
                             <td class="inputExpression">adaptive tuning</td>
                             <td class="comment">just(...)</td>
-                            <td class="comment">just(60#12, 64#12, 67#12)</td>
+                            <td class="comment">just(#60, #64, #67)</td>
                         </tr>
                     </table>
                 </div>
-                
-                <!--[et]      a#b   or  et(a, b)
-                - an ET interval ('a' steps in 'b'-ET)
-                - Ex: 2#12 or 6#19
-                [ratio]   a:b   or  ratio(a, b)
-                - a frequency ratio
-                - Ex: 
-                - compound ratio shorthand:
-                - 4:5:6:7 = '(5:4, 6:4, 7:4)
-                [freq]    x Hz  or  freq(x)
-                - a frequency in Hz
-                - Ex: 100Hz or 10 hz
-                [cents]   x c   or  cents(x)
-                - an interval in cents
-                - Ex: 100c or -50 C
-                [number]  xx    or  -x.xxxx
-                - a number with no specific meaning
-                - N.B. numbers are generally interpreted as 12et's
-                    when combined with non-numbers
-                - Ex: 10 or -1.34
-                [list] '(...args) or  list(...args)
-                - a list that can hold any number of any data type
-                - for most operations, if a list is given as the first argument
-                    the operation will be automatically mapped across the list
-                - Ex: '(4, 5, 6) * 2  = '(8, 10, 12)
-                        4:5:6:7 #12    = '(3.86#12,7.02#12,9.69#12)
-                <Here are a few examples:
-                
-                    <tr>
-                        <td class="inputExpression">&gt; syntonicComma = (fifth * 4 - third) % octave</td>
-                        <td class="comment">calculate a comma and keep it smaller than an octave</td>
-                    </tr>
-                    <tr>
-                        <td class="inputExpression">&gt; syntonicComma</td>
-                        <td class="comment">get the value of the variable</td>
-                    </tr>
-                    <tr>
-                        <td class="output">81:80 (ratio)</td>
-                    </tr>
-                    <tr>
-                        <td class="inputExpression">&gt; #</td>
-                        <td class="comment">get the 12ET value of the previous answer</td>
-                    </tr>
-                    <tr>
-                        <td class="output">0.22#12 (et)</td>
-                    </tr>
-                    <tr>
-                        <td class="inputExpression">&gt; cents(4 - 5:4)</td>
-                        <td class="comment">5:4 "error" in 12ET</td>
-                    </tr>
-                    <tr>
-                        <td class="output">13.69c (cents)</td>
-                    </tr>
-                    <tr>
-                        <td class="inputExpression">&gt; cents(6#19 - 5:4)</td>
-                        <td class="comment">5:4 "error" in 19ET</td>
-                    </tr>
-                    <tr>
-                        <td class="output">-7.37c (cents)</td>
-                    </tr>-->
-
             </footer>
         </div>
         
@@ -146,5 +85,6 @@
         <script src="xen.js" type="module"></script>
         <script src="xen-webaudio-playback.js" type="module"></script>
         <script src="calc.js" type="module"></script>
+        <script src="xen.test.js" type="module"></script>
     </body>
 </html>

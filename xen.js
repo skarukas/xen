@@ -46,7 +46,7 @@ class List extends Array {
 
 // change display
 tune.Frequency.prototype.toString = function() {
-    return tune.Util.round(this.freq, 2) + "Hz";
+    return tune.Util.round(this.freq, 2) + "hz";
 }
 tune.ETInterval.prototype.toString = function() {
     return tune.Util.round(this.n, 2) + "#" + tune.Util.round(this.d, 2);
@@ -59,60 +59,56 @@ function isInterval(a) {
 
 const xen = {};
 
-xen.add = function(a, b) {
+xen.add = elementWise(mapList(function(a, b) {
+    assertDefined(1, arguments);
+
     try {
-        if (b == undefined) {
-            if (typeof a == "number") return a;
-            else return a.asET();
-        }
+        if (b == undefined) return xen.number(a);
 
-        // invert arguments for list map
-        if (displayType(b) == 'list' && displayType(a) != 'list') return mapList(xen.add)(b, a);
-
-        // both numbers, just add
         if (typeof a == "number" && typeof b == "number") return a + b;
-        
-        // at least one is not a number, do interval math
+        // convert numbers to ETs
         if (typeof a == "number") a = tune.ETInterval(a);
         if (typeof b == "number") b = tune.ETInterval(b);
-
-        if (displayType(b) == "freq" && isInterval(a)) return b.noteAbove(a);
-        if (displayType(a) == "freq" && isInterval(b)) return a.noteAbove(b);
-        if (displayType(a) == "freq" && displayType(b) == "freq") return tune.Frequency(a.freq + b.freq);
-        if (displayType(a) == "et" || displayType(b) == "et") return xen.et(a.add(b));
+        if (displayType(b) == "freq"  && isInterval(a)) return b.noteAbove(a);
+        if (displayType(a) == "freq"  && isInterval(b)) return a.noteAbove(b);
+        if (displayType(a) == "freq"  && displayType(b) == "freq") return tune.Frequency(a.freq + b.freq);
+        if (displayType(a) == "et"    && displayType(b) == "et")   return a.add(b);
+        if (displayType(a) == "et"    || displayType(b) == "et")   return xen.et(a.add(b));
+        if (displayType(a) == "cents" || displayType(b) == "cents") return xen.cents(a.add(b));
         return a.add(b);
     } catch (e) {
         throw new TypeError(`Ambiguous or incorrect call to +.
         ${givenVals(a, b)}`);
     }
-}
+}));
 
-xen.subtract = function(a, b) {
-    if (b == undefined) {
-        if (typeof a == "number") return -a;
-        else if (displayType(a) == "freq") return tune.Frequency(-a.freq);
-        else return a.inverse();
+xen.inverse = mapList(function(a) {
+    assertDefined(1, arguments);
+
+    try {
+        switch (displayType(a)) {
+            case "number": return -a;
+            case 'et':     return a.inverse();
+            case 'cents':  return a.inverse();
+            case 'ratio':  return a.inverse();
+            case 'freq':   throw "Frequencies cannot be negative.";
+            default:       throw "";
+        }
+    } catch (e) {
+        throw new TypeError(`Unable to invert.
+        ${givenVals(a)}`);
     }
+});
 
-    // both numbers, just subtract
-    if (typeof a == "number" && typeof b == "number") return a - b;
-    
-    // at least one is not a number, do interval math
-    if (typeof a == "number") a = tune.ETInterval(a);
-    if (typeof b == "number") b = tune.ETInterval(b);
+xen.subtract = elementWise(mapList(function(a, b) {
+    assertDefined(1, arguments);
+    if (b == undefined) return xen.inverse(a);
     if (displayType(a) == "freq" && displayType(b) == "freq") return tune.Frequency(a.freq - b.freq);
-    if (displayType(a) == "freq" && isInterval(b))            return a.noteBelow(b);
-    if (displayType(b) == "freq") throw new TypeError(`Cannot subtract a frequency from an interval.
-    ${givenVals(a, b)}`);
+    return xen.add(a, xen.inverse(b));
+}));
 
-    return a.subtract(b);
-}
-
-xen.multiply = function(a, b) {
+xen.multiply = elementWise(mapList(function(a, b) {
     assertDefined(2, arguments);
-
-    // invert arguments for list map
-    if (displayType(b) == 'list' && displayType(a) != 'list') return mapList(xen.multiply)(b, a);
     
     // both numbers, just multiply
     if (typeof a == "number" && typeof b == "number") return a * b;
@@ -128,23 +124,38 @@ xen.multiply = function(a, b) {
         throw new TypeError(`At least one argument to * must be a number.
         ${givenVals(a, b)}`);
     }
-}
+}));
 
-xen.divide = function(a, b) {
+xen.divide = elementWise(mapList(function(a, b) {
     assertDefined(2, arguments);
 
-    // both numbers, just divide
-    if (typeof a == "number" && typeof b == "number") return a / b;
+    try {
+        // find numeric result
+        if (typeof a == "number" && typeof b == "number") return a / b;
 
-    // at least one is not a number, do interval math
-    if (isInterval(a) && typeof b == "number") return a.divide(b);
-    if (isInterval(a) && isInterval(b)) return a.divideByInterval(b);
-    if (displayType(a) == "freq" && typeof b == "number") return tune.Frequency(a.freq / b);
-    else throw new TypeError(`Incompatible types for /.
+        if (displayType(a) == "freq") {
+            switch (displayType(b)) {
+                case "number": return tune.Frequency(a.freq / b);
+                case 'et':     return xen.et(a).divideByInterval(b);
+                case 'cents':  return xen.et(a).divideByInterval(b);
+                case 'ratio':  throw "";
+                case 'freq':   return a.freq / b.freq;
+                default:       throw "";
+            }
+        }
+        if (isInterval(a) && isInterval(b)) return a.divideByInterval(b);
+
+        // at least one is not a number, do interval math
+        if (isInterval(a) && typeof b == "number") return a.divide(b);
+        if (typeof a == "number") throw ""; // can only divide a num by another num
+        else throw "";
+    } catch (e) {
+        throw new TypeError(`Incompatible types for /.
     ${givenVals(a, b)}`);
-}
+    }
+}));
 
-xen.mod = function(a, b) {
+xen.mod = elementWise(mapList(function(a, b) {
     assertDefined(2, arguments);
 
     // both numbers, just mod
@@ -157,16 +168,16 @@ xen.mod = function(a, b) {
     if (typeof b == "number") b = tune.ETInterval(b);
 
     return a.mod(b);
-}
+}));
 
-xen.pow = function(a, b) {
+xen.pow = elementWise(mapList(function(a, b) {
     assertDefined(2, arguments);
 
     // both numbers, return their power
     if (typeof a == "number" && typeof b == "number") return Math.pow(a, b);
     throw new TypeError(`Both arguments to ^ must be numbers.
     ${givenVals(a, b)}`);
-}
+}));
 
 xen.colon = function(a, b) {
     assertDefined(1, arguments);
@@ -174,10 +185,10 @@ xen.colon = function(a, b) {
     if (typeof b == 'number' && displayType(a) == 'ratio') return new List(a.inverse(), tune.FreqRatio(b, a.n));
     if (typeof b == 'number' && displayType(a) == 'list')  return new List(...a, tune.FreqRatio(b, a[0].d));
 
-    else return mapList(xen.ratio)(a, b);
+    else return xen.ratio(a, b);
 }
 
-xen.ratio = function(a, b) {
+xen.ratio = elementWise(mapList(function(a, b) {
     assertDefined(1, arguments);
 
     try {
@@ -194,9 +205,9 @@ xen.ratio = function(a, b) {
         throw new TypeError(`Incompatible type(s) for ratio constructor.
         ${givenVals(a, b)}`);
     }
-}
+}));
 
-xen.et = function(a, b) {
+xen.et = mapList(function(a, b) {
     assertDefined(1, arguments);
     
     try {
@@ -213,9 +224,9 @@ xen.et = function(a, b) {
         throw new TypeError(`Incompatible type(s) for et constructor.
         ${givenVals(a, b)}`);
     }
-}
+});
 
-xen.cents = function(a) {
+xen.cents = mapList(function(a) {
     assertDefined(1, arguments);
 
     try {
@@ -231,9 +242,9 @@ xen.cents = function(a) {
         throw new TypeError(`Unable to convert to cents.
         ${givenVals(a)}`);
     }
-}
+});
 
-xen.freq = function(a) {
+xen.freq = mapList(function(a) {
     assertDefined(1, arguments);
 
     try {
@@ -249,9 +260,9 @@ xen.freq = function(a) {
         throw new TypeError(`Unable to convert to Hz.
         ${givenVals(a)}`);
     }
-}
+});
 
-xen.number = function(a) {
+xen.number = mapList(function(a) {
     assertDefined(1, arguments);
 
     try {
@@ -259,7 +270,7 @@ xen.number = function(a) {
             case "number": return a;
             case 'et':     return a.asET().n;
             case 'cents':  return a.cents();
-            case 'ratio':  throw "";
+            case 'ratio':  return a.n / a.d;
             case 'freq':   return a.freq;
             default:       throw "";
         }
@@ -267,9 +278,9 @@ xen.number = function(a) {
         throw new TypeError(`Unable to convert to number.
         ${givenVals(a)}`);
     }
-}
+});
 
-xen.mtof = function(a) {
+xen.mtof = mapList(function(a) {
     assertDefined(1, arguments);
 
     try {
@@ -285,9 +296,9 @@ xen.mtof = function(a) {
         throw new TypeError(`Incompatible type for mtof().
         ${givenVals(a)}`);
     }
-}
+});
 
-xen.ftom = function(a, b) {
+xen.ftom = mapList(function(a, b) {
     assertDefined(1, arguments);
 
     try {
@@ -304,7 +315,7 @@ xen.ftom = function(a, b) {
         throw new TypeError(`Incompatible type(s) for ftom().
         ${givenVals(a, b)}`);
     }
-}
+});
 
 xen.list = function(...args) {
     return new List(...args);
@@ -504,16 +515,17 @@ var functions = {
         return result;
     },
     // xen constructors
-    ratio: mapList(xen.ratio),
-    et: mapList(xen.et),
-    cents: mapList(xen.cents),
-    freq: mapList(xen.freq),
-    number: mapList(xen.number),
+    ratio: xen.ratio,
+    et: xen.et,
+    cents: xen.cents,
+    freq: xen.freq,
+    number: xen.number,
     list: xen.list,
     "'": xen.list,
+    inverse: xen.inverse,
     // xen functions
-    mtof: mapList(xen.mtof),
-    ftom: mapList(xen.ftom),
+    mtof: xen.mtof,
+    ftom: xen.ftom,
     play: xen.play,
     approxpartials: xen.approxpartials,
     just: xen.just
@@ -527,12 +539,41 @@ function mapList(fn) {
     return function (first, ...args) {
         if (displayType(first) == 'list') {
             return first.map((e) => fn(e, ...args));
+        } else if (displayType(args[0]) == 'list') {
+            return args[0].map((e) => fn(first, e,));
         } else {
             return fn(first, ...args);
         }
     }
 }
 
+/**
+ * Takes a function and turns it into a version that applies
+ * it to all elements if all inputs are lists
+ */
+function elementWise(fn) {
+    return function (...args) {
+        if (displayType(args[0]) == 'list' && displayType(args[1]) == 'list') {
+            let size = args[0].length;
+            let result = [];
+            for (let j = 0; j < size; j++) {
+                let row = [];
+                for (let i = 0; i < args.length; i++) {
+                    let val = args[i][j];
+                    if (typeof val == 'undefined') {
+                        throw new RangeError(`Elementwise operations require that all inputs be lists of the same size.
+                    ${givenVals(...args)}`);
+                    }
+                    row.push(val);
+                }
+                result.push(fn(...row));
+            }
+            return List.from(result);
+        } else {
+            return fn(...args);
+        }
+    }
+}
 
 
 //  ********* LEXER *********
@@ -714,12 +755,14 @@ var parse = function(tokens) {
     // interval operators
     infix(":", 7.5);
     infix("#", 7.5);
+    prefix("#", 7);
+    prefix(":", 7);
     //unary operators
-    prefix("-", 7);
-    prefix("+", 7);
+    prefix("-", 6.5);
+    prefix("+", 6.5);
     // postfix
-    postfix("c", 6.5);
-    postfix("hz", 6.5);
+    postfix("c", 6.8);
+    postfix("hz", 6.8);
 
     infix("^", 6, 5);
     infix("*", 4);
@@ -727,9 +770,6 @@ var parse = function(tokens) {
     infix("%", 4);
     infix("+", 3);
     infix("-", 3);
-
-    prefix(":", 2.5);
-    prefix("#", 2.5);
 
     infix("=", 1, 2, function(left) {
         if (left.type === "call") {
@@ -783,7 +823,7 @@ var evaluate = function(parseTree) {
         if (node.type === "number") return node.value;
         else if (operators[node.type]) {
             // : is the only operator that does not map lists by default (due to compound ratio expansions)
-            let fn = (node.type == ':')? operators[node.type] : mapList(operators[node.type]);
+            let fn = operators[node.type];
             if (node.right && node.left) return fn(parseNode(node.left), parseNode(node.right)); // binary
             return fn(parseNode(node.right || node.left)); // unary
         }
@@ -813,20 +853,17 @@ var evaluate = function(parseTree) {
         }
     };
 
-    var output = "";
-    for (var i = 0; i < parseTree.length; i++) {
-        var value = parseNode(parseTree[i]);
-
+    // eval the parseTree, returning all vals in an array of value-type pairs
+    let output = parseTree.map((node) => {
+        var value = parseNode(node);
         if (typeof value !== "undefined") {
-            let answer = value;
+            let type = displayType(value);
             // store answer
             variables.ans = value;
-            if (typeof value == 'symbol') answer = value.description;
-            // add type annotations to result
-            answer += ` (${displayType(value)})`;
-            output += answer; 
+            if (typeof value == 'symbol') return {value: value.description, type};
+            else return {value, type};
         }
-    }
+    });
     return output;
 };
 var calculate = function(input) {
@@ -841,4 +878,5 @@ const external = {
     "evaluate": calculate, 
     "playback": xen.playback
 }
+
 export default external;
