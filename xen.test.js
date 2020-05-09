@@ -438,6 +438,66 @@ const tests = {
         xenTest("'(4, 6, 10)#'(12, 19, 31)", "'(4#12,6#19,10#31)", "list");
         xenTest("'(1, 3, 5)#'(4, 6)", "error");
         xenTest("#'(12, 19, 31)", "'(12#12,19#12,31#12)", "list");
+    },
+    freq() {
+        //// freq() function
+        xenTest("freq(69#12)",   "440hz", "freq");
+        xenTest("freq(100hz)",   "100hz", "freq");
+        xenTest("freq(6900c)",   "440hz",  "freq");
+        xenTest("freq(5:4)",     "error").addExample("freq", "ratios cannot be converted to frequencies");
+        xenTest("freq(400)",     "400hz",   "freq");
+        xenTest("freq(0)",       "error");
+        xenTest("freq(-5)",      "error");
+
+        // list mapping
+        xenTest("freq('(#69, 300, 10hz))", "'(440hz,300hz,10hz)", "list");
+    },
+    hz() {
+        //// hz operator precedence less than # and :
+        xenTest("69#12 hz",   "440hz", "freq");
+        xenTest("#69 hz",     "440hz", "freq");
+        xenTest("100hz hz",   "100hz", "freq");
+        xenTest("6900c hz",   "440hz",  "freq");
+        xenTest("5:4 hz",     "error").addExample("freq", "ratios cannot be converted to frequencies");
+        xenTest("400 hz",     "400hz",   "freq");
+        xenTest("0 hz",       "error");
+        xenTest("-5 hz",      "error");
+
+        xenTest("400 Hz",     "400hz",   "freq").addExample("freq", "hz operator is case-insensitive");
+        xenTest("400 HZ",     "400hz",   "freq");
+        xenTest("400 hZ",     "400hz",   "freq");
+
+        // list mapping
+        xenTest("'(#69, 300, 10hz)hz", "'(440hz,300hz,10hz)", "list");
+    },
+    cents() {
+        //// cents() function
+        xenTest("cents(69#12)",   "6900c", "cents");
+        xenTest("cents(440hz)",   "6900c", "cents");
+        xenTest("cents(6900c)",   "6900c", "cents");
+        xenTest("cents(5:4)",     "386.31c","cents");
+        xenTest("cents(400)",     "400c",  "cents");
+        xenTest("cents(0)",       "0c",    "cents");
+        xenTest("cents(-5)",      "-5c",   "cents");
+
+        // list mapping
+        xenTest("cents('(#69, 440hz, 6900))", "'(6900c,6900c,6900c)", "list");
+    },
+    c() {
+        //// c operator precedence less than # and :
+        xenTest("69#12 c",   "6900c", "cents");
+        xenTest("#69 c",     "6900c", "cents");
+        xenTest("440hz c",   "6900c", "cents");
+        xenTest("6900c c",   "6900c",  "cents");
+        xenTest("5:4 c",     "386.31c","cents");
+        xenTest("400 c",     "400c",   "cents");
+        xenTest("0 c",       "0c",    "cents");
+        xenTest("-5 c",      "-5c",   "cents");
+
+        xenTest("400 C",     "400c",  "cents").addExample("cents", "c operator is case-insensitive");
+
+        // list mapping
+        xenTest("'(#69, 440hz, 6900) c", "'(6900c,6900c,6900c)", "list");
     }
 }
 
@@ -453,6 +513,10 @@ function test() {
     tests.colon();
     tests.et();
     tests.hash();
+    tests.freq();
+    tests.hz();
+    tests.cents();
+    tests.c();
 
     //console.log(examples);
 
