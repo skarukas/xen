@@ -66,9 +66,6 @@ xen.add = elementWise(mapList(function(a, b) {
         if (b == undefined) return xen.number(a);
 
         if (typeof a == "number" && typeof b == "number") return a + b;
-        // convert numbers to ETs
-        if (typeof a == "number") a = tune.ETInterval(a);
-        if (typeof b == "number") b = tune.ETInterval(b);
         if (displayType(b) == "freq"  && isInterval(a)) return b.noteAbove(a);
         if (displayType(a) == "freq"  && isInterval(b)) return a.noteAbove(b);
         if (displayType(a) == "freq"  && displayType(b) == "freq") return tune.Frequency(a.freq + b.freq);
@@ -143,6 +140,7 @@ xen.divide = elementWise(mapList(function(a, b) {
                 default:       throw "";
             }
         }
+        if (displayType(b) == 'freq') throw "";
         if (isInterval(a) && isInterval(b)) return a.divideByInterval(b);
 
         // at least one is not a number, do interval math
@@ -158,16 +156,29 @@ xen.divide = elementWise(mapList(function(a, b) {
 xen.mod = elementWise(mapList(function(a, b) {
     assertDefined(2, arguments);
 
-    // both numbers, just mod
-    if (typeof a == "number" && typeof b == "number") {
-        return tune.Util.mod(a, b);
+    try {
+        // both numbers, just mod
+        if (typeof a == "number" && typeof b == "number") return tune.Util.mod(a, b);
+
+        /*         
+        // at least one is not a number, do interval math
+        if (typeof a == "number") a = tune.ETInterval(a);
+        if (typeof b == "number") b = tune.ETInterval(b); */
+
+        if (displayType(a) == "freq" && displayType(b) == 'freq') {
+            return xen.freq(tune.Util.mod(a.freq, b.freq));
+        }
+        if (displayType(b) == 'freq') throw "";
+        if (displayType(a) == 'ratio') {
+            // fix odd rounding errors (maybe?)
+            return xen.ratio(xen.et(a).mod(b));
+        }
+        if (isInterval(a) && isInterval(b)) return a.mod(b);
+        else throw "";
+    } catch (e) {
+        throw new TypeError(`Incompatible types for %.
+    ${givenVals(a, b)}`);
     }
-
-    // at least one is not a number, do interval math
-    if (typeof a == "number") a = tune.ETInterval(a);
-    if (typeof b == "number") b = tune.ETInterval(b);
-
-    return a.mod(b);
 }));
 
 xen.pow = elementWise(mapList(function(a, b) {
@@ -215,7 +226,113 @@ xen.ratio = elementWise(mapList(function(a, b) {
     }
 }));
 
-xen.et = mapList(function(a, b) {
+/**
+ * Rounds a ratio to make it simpler
+ * 
+ * @param r - an interval to make into a simplified ratio 
+ *            (lists are also fine, as they will be mapped)
+ * @param err - an interval of allowable error
+ */
+xen.simplify = mapList(function(interval, err = Cents.fromCount(5)) {
+    assertDefined(1, arguments);
+    try {
+        if (!isInterval(interval)) throw "";
+        if (!isInterval(err)) throw "";
+        let r = interval.asFrequency();
+        let d = r.d;
+        let n = r.decimal();
+        err = err.asFrequency().decimal();
+        err = (err - 1) * n;
+
+        let x = n, 
+            a = Math.floor(x), 
+            h1 = 1, h2, 
+            k1 = 0, k2, 
+            h = a, k = 1;
+        while (x - a > err * k * k) {
+            x = 1 / (x - a);
+            a = Math.floor(x);
+            h2 = h1;
+            h1 = h;
+            k2 = k1;
+            k1 = k;
+            // about to get to the original ratio's level of accuracy, 
+            //    so don't proceed
+            if (k2 + a * k1 == d) break;
+            h = h2 + a * h1;
+            k = k2 + a * k1;
+        }
+        return tune.FreqRatio(h, k);
+    } catch (e) {
+        throw new TypeError(`Incompatible type(s) for simplify().
+        ${givenVals(...arguments)}`);
+    }
+});
+
+xen.closest = function(interval, maxErr = Cents.fromCount(50), numRatios) {
+    assertDefined(1, arguments);
+
+    try {
+        if (typeof maxErr == 'number') {
+            if (numRatios && !isInterval(numRatios)) throw "";
+            let temp = numRatios;
+            numRatios = maxErr;
+            maxErr = temp;
+        }
+        numRatios = numRatios || 5;
+        maxErr = maxErr || Cents.fromCount(50);
+
+        let n = interval.asFrequency().decimal();
+        maxErr = maxErr.asFrequency().decimal();
+        maxErr = (maxErr - 1) * n;
+
+        let result = new List();
+
+        let x = n, 
+            a = Math.floor(x), 
+            h1 = 1, h2, 
+            k1 = 0, k2, 
+            h = a, k = 1,
+            minErr = 1e-9,
+            count = 0;
+        while (x - a > minErr * k * k && count < numRatios) {
+            x = 1 / (x - a);
+            a = Math.floor(x);
+            h2 = h1;
+            h1 = h;
+            k2 = k1;
+            k1 = k;
+            h = h2 + a * h1;
+            k = k2 + a * k1;
+            // gather the ratios within the desired range of accuracy
+            if (x - a <= maxErr * k * k) {
+                result.unshift(tune.FreqRatio(h, k));
+                count++;
+            }
+        }
+        return result;
+    } catch (e) {
+        throw new TypeError(`Incompatible type(s) for closest().
+        ${givenVals(...arguments)}`);
+    }
+}
+/* dtf(n, places = 9) {
+    let err = Math.pow(10, -places);
+    let x = n, a = Math.floor(x), h1 = 1, h2, k1 = 0, k2, h = a, k = 1;
+    while (x - a > err * k * k) {
+        x = 1 / (x - a);
+        a = Math.floor(x);
+        h2 = h1;
+        h1 = h;
+        k2 = k1;
+        k1 = k;
+        h = h2 + a * h1;
+        k = k2 + a * k1;
+    }
+    return [h, k];
+} */
+
+xen.et = elementWise(mapList(function(a, b) {
     assertDefined(1, arguments);
     
     try {
@@ -232,7 +349,7 @@ xen.et = mapList(function(a, b) {
         throw new TypeError(`Incompatible type(s) for et constructor.
         ${givenVals(a, b)}`);
     }
-});
+}));
 
 xen.cents = mapList(function(a) {
     assertDefined(1, arguments);
@@ -532,13 +649,16 @@ var functions = {
     number: xen.number,
     list: xen.list,
     "'": xen.list,
-    inverse: xen.inverse,
     // xen functions
+    inverse: xen.inverse,
     mtof: xen.mtof,
     ftom: xen.ftom,
     play: xen.play,
+    // adaptive tuning
     approxpartials: xen.approxpartials,
-    just: xen.just
+    simplify: xen.simplify,
+    just: xen.just,
+    closest: xen.closest,
 };
 
 /**
@@ -764,9 +884,9 @@ var parse = function(tokens) {
 
     // interval operators
     infix(":", 7.5);
-    infix("#", 7.5);
+    infix("#", 7.3);
     prefix("#", 7);
-    prefix(":", 7);
+    //prefix(":", 7);
     //unary operators
     prefix("-", 6.5);
     prefix("+", 6.5);

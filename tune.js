@@ -16,7 +16,12 @@
         /** Calculate the log of `n`, base 2. */
         log2: (n) => Util.log(n, 2),
         /** Calculate the modulo of two numbers. In contrast to `%`, this never returns a negative number. */
-        mod: (n, base) => ((n % base) + base) % base,
+        mod: (n, base) => {
+            //correct for rounding err
+            let m = (n % base);
+            m = (Math.abs(m) < 1e-14) ? 0 : m;
+            return (m + base) % base;
+        },
         /**
          * Calculate the quotient and remainder when dividing two numbers
          * @returns A pair with the form `[quotient, remainder]`
@@ -564,8 +569,8 @@
             this.base = base;
             if (isNaN(steps / base))
                 throw new RangeError("ET pitch indices must be numeric.");
-            if (base == 0)
-                throw new RangeError("Cannot create an equal division of base zero.");
+            if (base <= 0)
+                throw new RangeError("Cannot create an equal division with base <= 0.");
         }
         /** The size in steps (interval class) and base, e.g. "4 [12ET]", */
         get name() {
