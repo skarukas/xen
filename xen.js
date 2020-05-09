@@ -8,6 +8,11 @@
  * 
  * integrated with my library `tune.js`
  * 
+ * 
+ * TODO: 
+ * - revise algorithm in simplify() and closest() to converge slower
+ * - debug function definitions
+ * - extend math functions to work over intervals
  */
 
 //import tune from "./tune"; // defined globally already
@@ -269,7 +274,7 @@ xen.simplify = mapList(function(interval, err = Cents.fromCount(5)) {
     }
 });
 
-xen.closest = function(interval, maxErr = Cents.fromCount(50), numRatios) {
+xen.closest = function(interval, maxErr, numRatios) {
     assertDefined(1, arguments);
 
     try {
@@ -280,41 +285,66 @@ xen.closest = function(interval, maxErr = Cents.fromCount(50), numRatios) {
             maxErr = temp;
         }
         numRatios = numRatios || 5;
-        maxErr = maxErr || Cents.fromCount(50);
-
-        let n = interval.asFrequency().decimal();
-        maxErr = maxErr.asFrequency().decimal();
-        maxErr = (maxErr - 1) * n;
-
-        let result = new List();
-
-        let x = n, 
-            a = Math.floor(x), 
-            h1 = 1, h2, 
-            k1 = 0, k2, 
-            h = a, k = 1,
-            minErr = 1e-9,
-            count = 0;
-        while (x - a > minErr * k * k && count < numRatios) {
-            x = 1 / (x - a);
-            a = Math.floor(x);
-            h2 = h1;
-            h1 = h;
-            k2 = k1;
-            k1 = k;
-            h = h2 + a * h1;
-            k = k2 + a * k1;
-            // gather the ratios within the desired range of accuracy
-            if (x - a <= maxErr * k * k) {
-                result.unshift(tune.FreqRatio(h, k));
-                count++;
-            }
-        }
-        return result;
+        maxErr = maxErr || Cents.fromCount(30);
+        // return ET numbers
+        if (displayType(interval) == 'list') return List.from(tune.ET.bestFitETs(interval, undefined, numRatios));
+        // return intervals that are close
+        return (displayType(interval) == 'ratio')? xen.closestETs(interval, maxErr, numRatios) : xen.closestRatios(interval, maxErr, numRatios);
     } catch (e) {
         throw new TypeError(`Incompatible type(s) for closest().
         ${givenVals(...arguments)}`);
     }
+};
+
+// private (no type checking or error handline)
+xen.closestETs = function(interval, maxErr, numETs) {
+    let errorArr = new List();
+    let maxBase = 53;
+    let base = 1;
+
+    while (base < maxBase) {
+        let et = interval.getNearestET(base++);
+        let error = Math.abs(et.cents() - interval.cents());
+        errorArr.push({ et, error })
+        //if (error < maxErr.cents()) result.push(et);
+    }
+
+    // sort by ascending error, or base if error is equal
+    let sorted = errorArr.sort((a, b) => (a.error === b.error) ? a.et.d - b.et.d : a.error - b.error);
+    return sorted.map((pair) => pair.et).slice(0, numETs);
+}
+
+// private (no type checking or error handline)
+xen.closestRatios = function(interval, maxErr, numRatios) {
+    let n = interval.asFrequency().decimal();
+    maxErr = maxErr.asFrequency().decimal();
+    maxErr = (maxErr - 1) * n;
+
+    let result = new List();
+
+    let x = n, 
+        a = Math.floor(x), 
+        h1 = 1, h2, 
+        k1 = 0, k2, 
+        h = a, k = 1,
+        minErr = 1e-9,
+        count = 0;
+    while (x - a > minErr * k * k && count < numRatios) {
+        x = 1 / (x - a);
+        a = Math.floor(x);
+        h2 = h1;
+        h1 = h;
+        k2 = k1;
+        k1 = k;
+        h = h2 + a * h1;
+        k = k2 + a * k1;
+        // gather the ratios within the desired range of accuracy
+        if (x - a <= maxErr * k * k) {
+            result.unshift(tune.FreqRatio(h, k));
+            count++;
+        }
+    }
+    return result;
 }
 /* dtf(n, places = 9) {
     let err = Math.pow(10, -places);

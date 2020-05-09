@@ -346,11 +346,11 @@
         /** or a custom name. */
         set name(val) { this.__name__ = val; }
         noteAbove(interval) {
-            let newPitch = this.pitch + interval.asET(this.base).steps;
+            let newPitch = this.pitch + interval.asET(this.base).n;
             return new this.constructor(newPitch, this.base);
         }
         transposeBy(interval) {
-            this.pitch += interval.asET(this.base).steps;
+            this.pitch += interval.asET(this.base).n;
         }
         getETPitch(base = 12) {
             return this.pitch * base / this.base;
@@ -531,7 +531,7 @@
             return this.cents() / other.cents();
         }
         cents() {
-            return Util.round(this.asET().steps * 100, 2);
+            return Util.round(this.asET().n * 100, 2);
         }
         /** Returns the `ETInterval` closest in size. */
         getNearestET(base = 12) {
@@ -565,7 +565,6 @@
     class ETInterval extends FracInterval {
         constructor(steps, base = 12) {
             super(steps, base);
-            this.steps = steps;
             this.base = base;
             if (isNaN(steps / base))
                 throw new RangeError("ET pitch indices must be numeric.");
@@ -594,7 +593,7 @@
             return new this.constructor(this.n * factor, this.d);
         }
         asFrequency() {
-            let decimal = Math.pow(2, (this.steps / this.base));
+            let decimal = Math.pow(2, (this.n / this.base));
             let [a, b] = Util.dtf(decimal);
             return new FreqRatio(a, b);
         }
