@@ -24,6 +24,19 @@ header {
     padding: 10px 0px 5px 15px;
 }
 
+.link {
+    -webkit-transition: color 0.2s;
+    -moz-transition: color 0.2s;
+    transition: color 0.2s;
+    color: green; 
+    text-decoration: none;
+}
+
+.link:hover {
+    color: rgb(82, 204, 82);
+}
+
+
 
 #codeArea {
     overflow-y:scroll;
