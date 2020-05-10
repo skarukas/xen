@@ -9,7 +9,7 @@ codeInput.placeholder=`xen v. ${version}: type 'help' for a brief introduction`;
 codeInput.focus();
 
 const helpString = 
-`****** xen v. ${version}, © 2020 stephen karukas ******
+`****** xen console v. ${version}, © 2020 stephen karukas ******
 xen is a high-level, interpreted language for analyzing and operating upon 
 musical pitch structures within the context of "xenharmonic" microtonal theory
 
