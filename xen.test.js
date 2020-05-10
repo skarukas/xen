@@ -67,8 +67,8 @@ function xenTest(input, expectVal, expectType) {
 const tests = {
     add() {
         // binary
-        xenTest("2#12+19#19", "14#12",  "et").addExample("add", "et's change to base of first argument");
-        xenTest("4#19+12#12", "23#19",  "et").addExample("add");
+        xenTest("2#12+19#19", "14#12",  "et");
+        xenTest("4#19+12#12", "23#19",  "et").addExample("add", "et's change to base of first argument");
         xenTest("5:4+0#12",  "3.86#12", "et").addExample("add");
         xenTest("0#12+5:4",  "3.86#12", "et");
         xenTest("2#12+200c", "4#12",    "et");
@@ -361,6 +361,13 @@ const tests = {
         xenTest("8:6#12",    "4.98#12", "et");
         xenTest("5:4c",      "386.31c", "cents");
 
+
+        // unary prefix operator precedence greater than c and hz but less than binary : and #
+        xenTest(":69hz",   "error");
+        xenTest(":2c",     "1200c", "cents");// (:2)c
+        xenTest(":5:4",    "5:4", "ratio"); // :(5:4)
+        xenTest(":19#19",  "2:1"); // :(19#19)
+
         // compound ratio shorthand
         xenTest("4:5:6:7", "'(5:4,6:4,7:4)", "list");
         xenTest("4:(5:6)", "error");
@@ -424,11 +431,11 @@ const tests = {
         xenTest("19#4:3",   "error"); // 19#(4:3)
         xenTest("19##4",    "error"); // 19#(#4)
 
-        // prefix operator precedence greater than c and hz but less than : (and less than infix #)
+        // unary prefix operator precedence greater than c and hz but less than binary : and #
         xenTest("#69hz",   "440hz", "freq");  // (#69)hz
         xenTest("#10c",   "1000c");// (#10)c
         xenTest("#5:4",    "3.86#12", "et"); // #(5:4)
-        xenTest("#19#19",  "12#12"); // #(4#19)
+        xenTest("#19#19",  "12#12"); // #(19#19)
 
         // list mapping
         xenTest("'(1, 3, 5)#19", "'(1#19,3#19,5#19)", "list");

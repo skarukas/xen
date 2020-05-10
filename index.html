@@ -5,16 +5,16 @@
         <link rel="stylesheet" href="style.css"/>
         <link rel="shortcut icon" href="favicon.png" />
     </head>
-    <body>
-        <div id="flex-container">
+    <body class="primary">
+        <div id="flex-container" class="main-text">
             <div id="code-container">
-                <header><strong>xen console</strong> - interval playground</header>
+                <header><div><strong>xen console</strong> - interval playground</div><button class="dark-switch">dark mode is off</button></header>
                 <div id="codeArea">
                     <div id="result"></div>
-                    <div>&gt; <input type="text" id="codeInput" size="20" spellcheck="false"/></div>
+                    <div>&gt; <input type="text" id="codeInput" size="20" spellcheck="false" class="primary"/></div>
                 </div>
             </div>
-            <footer>
+            <footer class="secondary">
                 <div style="text-align: center;"><strong>xen cheat sheet</strong> (... = any # of arguments)</div>
                 <div class="footer-container">
                     <table style="width: 55vw;" class="example">
@@ -23,12 +23,6 @@
                             <td class="inputExpression" colspan="2">constructors</td>
                             <td class="inputExpression">example</td>
                         </thead>
-                        <tr>
-                            <td class="inputExpression">list</td>
-                            <td class="comment">'(...)</td>
-                            <td class="comment">list(...)</td>
-                            <td class="comment">'(3:2, 70Hz, 7#12)</td>
-                        </tr>
                         <tr>
                             <td class="inputExpression">ratio</td>
                             <td class="comment">a:b</td>
@@ -57,6 +51,12 @@
                             <td class="comment">x hz</td>
                             <td class="comment">freq(x)</td>
                             <td class="comment">500hz</td>
+                        </tr>
+                        <tr>
+                            <td class="inputExpression">list</td>
+                            <td class="comment">'(...)</td>
+                            <td class="comment">list(...)</td>
+                            <td class="comment">'(3:2, 70Hz, 7#12)</td>
                         </tr>
                     </table>
                     <table style=" width: 45vw;" class="example">
@@ -94,7 +94,7 @@
             </footer>
         </div>
         
-
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js" type="module"></script>
         <script src="tune.js"></script>
         <script src="xen.js" type="module"></script>
         <script src="xen-webaudio-playback.js" type="module"></script>

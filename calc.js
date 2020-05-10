@@ -5,65 +5,59 @@ const evaluate = xen.evaluate;
 const version = "1.0.0";
 const resultFeed = document.getElementById("result");
 const codeInput = document.getElementById("codeInput");
-codeInput.placeholder=`xen v. ${version}: type 'help' for brief documentation`;
+codeInput.placeholder=`xen v. ${version}: type 'help' for a brief introduction`;
 codeInput.focus();
 
 const helpString = 
-`xen v. ${version}, © 2020 Stephen Karukas
-clear        clear the console
-ans          stores the previous answer
+`****** xen v. ${version}, © 2020 stephen karukas ******
+xen is a high-level, interpreted language for analyzing and operating upon 
+musical pitch structures within the context of "xenharmonic" microtonal theory
 
-xen contains 6 data types: et, ratio, freq, cents, number, and list.
-generally, math may be performed freely between all types (xen handles the type conversions automatically).
+xen contains 6 main data types, with special syntax to identify them:
+ - et       4#12
+ - ratio    9:8
+ - freq     300hz
+ - cents    40c
+ - number   1.10
+ - list    '(1, 2, 3, 4)
 
-[et]      a#b   or  et(a, b)
- - an ET interval ('a' steps in 'b'-ET)
- - Ex: 2#12 or 6#19
-[ratio]   a:b   or  ratio(a, b)
- - a frequency ratio
- - Ex: 5:4 or 3:2
- - compound ratio shorthand:
-   - 4:5:6:7 = '(5:4, 6:4, 7:4)
-[freq]    x Hz  or  freq(x)
- - a frequency in Hz
- - Ex: 100Hz or 10 hz
-[cents]   x c   or  cents(x)
- - an interval in cents
- - Ex: 100c or -50 C
-[number]  xx    or  -x.xxxx
- - a number with no specific meaning
- - N.B. numbers are generally interpreted as 12et's
-     when combined with non-numbers
- - Ex: 10 or -1.34
-[list] '(...args) or  list(...args)
- - a list that can hold any number of any data type
- - for most operations, if a list is given as the first argument
-     the operation will be automatically mapped across the list
- - Ex: '(4, 5, 6) * 2  = '(8, 10, 12)
-        4:5:6:7 #12    = '(3.86#12,7.02#12,9.69#12)
+generally, math may be performed freely between all types
+using arithmetic operators (+, -, *, /, %). xen handles the 
+type conversions automatically behind the scenes.
 
-type conversion can be done using one of two methods:
- 1. specify the type as a function
-    Ex: et(5:4)      = 3.86#12
-    Ex: cents(4#12)  = 400c
- 2. use units following the values (freq and cents)
-    Ex: 60#12 Hz     = 261.63Hz
-    Ex: 3:2 c        = 701.96c
+n.b. most operators work in pitch space. for example, adding
+intervals corresponds to "stacking" them, no matter if they
+are frequency ratios or et (equal-tempered) intervals.
 
-play(...args)  play back any number of things, including lists
-               (numbers are interpreted as frequencies in Hz)
-just(...args)  adaptively tune the args to fit the harmonic series
-               (numbers are interpreted as frequencies in Hz)
-x = 10:9       define a variable
+the function play() may be used to play back notes, intervals,
+or even lists of intervals & interval structures such as 4:5:6:7.
 
-built-in JI interval variables:
-  octave    = 2:1
-  fifth     = 3:2
-  third     = 5:4
-  seventh   = 7:4
+xen also includes functions for analysis, such as closest(), which
+finds the closest et intervals for a given ratio and the closest 
+ratios for a given et interval.
 
-and much more! see https://github.com/skarukas/xen for full documentation.`;
+see https://github.com/skarukas/xen/wiki for full documentation.
+
+console-specific commands:
+ - clear    clear the console
+ - ans      a variable storing the previous answer
+`;
 //const helpString = helpText.reduce((rest, e) => rest + "\n" + e);
+
+// dark mode
+$( ".dark-switch" ).on("click", function() {
+    if( $( "body" ).hasClass( "dark-primary" )) {
+      $( "body" ).removeClass( "dark-primary" );
+      $( "#codeInput" ).removeClass( "dark-primary" );
+      $( "footer" ).removeClass( "dark-secondary" );
+      $( ".dark-switch" ).text( "dark mode is off" );
+    } else {
+      $( "body" ).addClass( "dark-primary" );
+      $( "#codeInput" ).addClass( "dark-primary" );
+      $( "footer" ).addClass( "dark-secondary" );
+      $( ".dark-switch" ).text( "dark mode is on" );
+    }
+});
 
 /**
  * Show the help text in a `pre` element.
@@ -120,7 +114,6 @@ function evaluateXenExpr() {
     appendNewDiv("inputExpression", `> ${inputExpr}`);
 
     if (inputExpr == 'clear') resultFeed.innerHTML = "";
-    else if (inputExpr == 'meme') saaB();
     else if (inputExpr == 'help') displayHelp();
     else {
         // evaluate xen code
@@ -147,22 +140,4 @@ function evaluateXenExpr() {
     pastInputs.push(inputExpr);
     codeInput.value = "";
     codeInput.scrollIntoView();
-}
-
-function saaB() {
-    let i = 5;
-
-    appendNewDiv("error", "XERR_FATAL: A fatal error occured while attempting " +
-                          "to access symbol $meme stored at memory address 0x9400-0x97FF. " +
-                          `Rebooting local machine in ${i} seconds...`);
-    appendNewDiv("error", ``);
-    let interval = setInterval(() => {
-        if (i == 0) {
-            clearInterval(interval);
-            appendNewDiv("help", "meme");
-            document.body.classList.add("meme");
-        } else {
-            appendNewDiv("error", `${--i} seconds...`);
-        }
-    }, 1000);
 }

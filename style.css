@@ -1,18 +1,25 @@
-html, body {
+body {
     margin: 0px;
     height: 100%;
+    -webkit-transition: color 1s linear, background-color 1s linear;
+    -moz-transition: color 1s linear, background-color 1s linear;
+    transition: color 1s linear, background-color 1s linear;
+}
+* {
     font-family: monospace;
 }
  
 #flex-container {
-    background-color: rgb(256, 256, 256, 0.8);
     font-size: 1.1em;
     display: flex;
     flex-flow: column;
     height: 100%;
     width: 100%;
-} 
+}
+
 header {
+    display: flex;
+    justify-content: space-between;
     font-size: 1em;
     padding: 10px 0px 5px 15px;
 }
@@ -26,6 +33,7 @@ header {
     padding: 0px 0px 10px 15px;
 }
 #codeInput {
+    outline: none;
     border: none;
     border-color: transparent;
     background: none;
@@ -38,9 +46,6 @@ header {
 }
 
 /* Code input colors */
-.inputExpression {
-    color: black;
-}
 .output, .comment {
     color: gray;
 }
@@ -55,33 +60,41 @@ header {
     white-space: nowrap;
     font-size: 1em;
     padding: 0px 5px;
-    border-left: 3px solid black;
+    border-left: 3px solid;
 
     -webkit-order: 0;
     -ms-flex-order: 0;
     order: 0;
-    -webkit-flex: 0 1 auto;
-    -ms-flex: 0 1 auto;
+    -webkit-flex: 1 1 auto;
+    -ms-flex: 1 1 auto;
     flex: 1 1 auto;
     -webkit-align-self: flex-start;
     -ms-flex-item-align: start;
     align-self: flex-start;
 }
+
 .no-border {
     border: none;
 }
 
-
 footer {
+    -webkit-transition: background-color 1s;
+    -moz-transition: background-color 1s;
+    transition: background-color 1s;
+
     width: 100%;
+    max-height: 25vh;
+    overflow: scroll;
+    padding: 10px;
+
     font-size: 1em;
-    padding: 5px;
-    background-color: rgb(200, 200, 200, 0.5);
-    flex: 2;
+    flex: 1 1 auto;
 }
 
 .footer-container {
-    display: -ms-flexbox;
+    height: 100%;
+
+    display: -ms-flex;
     display: -webkit-flex;
     display: flex;
     -webkit-flex-direction: row;
@@ -92,7 +105,7 @@ footer {
     flex-wrap: wrap;
     -webkit-justify-content: flex-start;
     -ms-flex-pack: start;
-    justify-content: space-around;
+    justify-content: flex-start;
     -webkit-align-content: flex-start;
     -ms-flex-line-pack: start;
     align-content: flex-start;
@@ -100,12 +113,42 @@ footer {
     -ms-flex-align: start;
     align-items: flex-start;
 }
+
 code {
     background-color:  none;
     color: crimson;
 }
 
-.meme {
-    background: url("https://scontent-ort2-1.xx.fbcdn.net/v/t1.0-9/46488240_571637023286850_2734206047836176384_n.jpg?_nc_cat=106&_nc_sid=8024bb&_nc_oc=AQmOQYAc1kTE3E6PwSs2LewCdgMEaWk7trEeo97zVDPyhDnKxqOnVzEN2ECDLkm6ITk&_nc_ht=scontent-ort2-1.xx&oh=e79db62804edc041fac07dc0fe83aa35&oe=5ED9A242&dl=1");
-    background-size: cover;
+
+.secondary {
+    border-color: black;
+    background-color: rgb(230, 230, 230);
+}
+
+.dark-secondary {
+    border-color: red;
+    background-color: rgb(50, 50, 50); 
+}
+
+.primary {
+    background-color: white;
+    color: black;
+}
+
+.dark-primary {
+    background-color: black; 
+    color: lightgray;
+}
+
+.dark-switch {
+    margin-right:10px;
+    outline: none;
+    background: none;
+    border: 2px solid gray;
+    color: gray;
+}
+
+.dark-switch:hover {
+    background:gray;
+    color: white;
 }

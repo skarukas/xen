@@ -10,9 +10,7 @@
  * 
  * 
  * TODO: 
- * - revise algorithm in simplify() and closest() to converge slower
  * - debug function definitions
- * - extend math functions to work over intervals
  */
 
 //import tune from "./tune"; // defined globally already
@@ -186,14 +184,61 @@ xen.mod = elementWise(mapList(function(a, b) {
     }
 }));
 
-xen.pow = elementWise(mapList(function(a, b) {
-    assertDefined(2, arguments);
+/**
+ * Turns every interval into an ascending interval
+ * 
+ */
+xen.abs = mapList(function(a) {
+    assertDefined(1, arguments);
 
-    // both numbers, return their power
-    if (typeof a == "number" && typeof b == "number") return Math.pow(a, b);
-    throw new TypeError(`Both arguments to ^ must be numbers.
-    ${givenVals(a, b)}`);
-}));
+    try {
+        switch (displayType(a)) {
+            case "number": return Math.abs(a);
+            case 'et':     return xen.et(Math.abs(a.n), a.d);
+            case 'cents':  return xen.cents(Math.abs(xen.number(a)));
+            case 'ratio':  return (a.n < a.d)? xen.ratio(a.d, a.n) : a;
+            case 'freq':   return a;
+            default:       return a;
+        }
+    } catch (e) {
+        throw new TypeError(`Unable to take the absolute value.
+        ${givenVals(a)}`);
+    }
+});
+
+/**
+ * Rounds an interval or number
+ */
+xen.abstractRound = function(a, round) {
+    assertDefined(1, arguments);
+
+    try {
+        switch (displayType(a)) {
+            case "number": return round(a);
+            case 'et':     return xen.et(round(a.n), a.d);
+            case 'cents':  return xen.cents(round(xen.number(a)));
+            case 'ratio':  return xen.et(round(xen.et(a).n));
+            case 'freq':   return xen.freq(round(xen.number(a)));
+            default:       return a;
+        }
+    } catch (e) {
+        throw new TypeError(`Unable to round.
+        ${givenVals(a)}`);
+    }
+};
+
+xen.round = mapList(function(a) {
+    return xen.abstractRound(a, Math.round);
+});
+
+xen.ceil = mapList(function(a) {
+    return xen.abstractRound(a, Math.ceil);
+});
+
+xen.floor = mapList(function(a) {
+    return xen.abstractRound(a, Math.floor);
+});
+
 
 xen.colon = function(a, b) {
     assertDefined(1, arguments);
@@ -316,51 +361,41 @@ xen.closestETs = function(interval, maxErr, numETs) {
 
 // private (no type checking or error handline)
 xen.closestRatios = function(interval, maxErr, numRatios) {
-    let n = interval.asFrequency().decimal();
+    let intervalDec = interval.asFrequency().decimal();
     maxErr = maxErr.asFrequency().decimal();
-    maxErr = (maxErr - 1) * n;
+    maxErr = (maxErr - 1) * intervalDec;
 
     let result = new List();
+    let count = 0;
 
-    let x = n, 
-        a = Math.floor(x), 
-        h1 = 1, h2, 
-        k1 = 0, k2, 
-        h = a, k = 1,
-        minErr = 1e-9,
-        count = 0;
-    while (x - a > minErr * k * k && count < numRatios) {
-        x = 1 / (x - a);
-        a = Math.floor(x);
-        h2 = h1;
-        h1 = h;
-        k2 = k1;
-        k1 = k;
-        h = h2 + a * h1;
-        k = k2 + a * k1;
-        // gather the ratios within the desired range of accuracy
-        if (x - a <= maxErr * k * k) {
-            result.unshift(tune.FreqRatio(h, k));
+    for (let d = 1; count < numRatios; d++) {
+        // find closest ratio with a certain denominator
+        let n = Math.round(intervalDec * d);
+        let err = Math.abs(intervalDec - (n / d));
+        
+        // check if it's within range and not already seen
+        //   new ratios will be a simplified fraction (coprime n, d)
+        if (err <= maxErr && coprime(n, d)) {
+            result.push(tune.FreqRatio(n, d));
             count++;
         }
     }
     return result;
 }
-/* dtf(n, places = 9) {
-    let err = Math.pow(10, -places);
-    let x = n, a = Math.floor(x), h1 = 1, h2, k1 = 0, k2, h = a, k = 1;
-    while (x - a > err * k * k) {
-        x = 1 / (x - a);
-        a = Math.floor(x);
-        h2 = h1;
-        h1 = h;
-        k2 = k1;
-        k1 = k;
-        h = h2 + a * h1;
-        k = k2 + a * k1;
+
+/**
+ * Determine whether two numbers are coprime (relatively prime)
+ */
+function coprime(a, b) {
+    if(!((a | b) & 1)) return false; // short circuit for both even integers
+
+    while(b) {
+        let t = a % b;
+        a = b;
+        b = t;
     }
-    return [h, k];
-} */
+    return a == 1; // a = gcd
+}
 
 xen.et = elementWise(mapList(function(a, b) {
     assertDefined(1, arguments);
@@ -595,6 +630,23 @@ function assertDefined(numArgs, argues) {
 }
 
 /**
+ * Check that the arguments of a function are the correct type 
+ * before execution.
+ */
+function typeCheck(fn, ...types) {
+    return function(...args) {
+        for (let arg of args) {
+            if (! types.includes(displayType(arg))) {
+                throw `Type mismatch for ${fn.name}().
+                Expect: ${types}
+                ${givenVals(...args)}`;
+            }
+        }
+        return fn(...args);
+    }
+}
+
+/**
  * 
  * Template for Given: ..., ... (..., ...)
  */
@@ -649,22 +701,22 @@ var variables = {
 };
 
 var functions = {
-    // numeric functions
-    sin: mapList(Math.sin),
-    cos: mapList(Math.cos),
-    tan: mapList(Math.cos),
-    asin: mapList(Math.asin),
-    acos: mapList(Math.acos),
-    atan: mapList(Math.atan),
-    abs: mapList(Math.abs),
-    round: mapList(Math.round),
-    ceil: mapList(Math.ceil),
-    floor: mapList(Math.floor),
-    log: mapList(Math.log),
-    exp: mapList(Math.exp),
-    sqrt: mapList(Math.sqrt),
-    max: Math.max,
-    min: Math.min,
+    // function that only work on numbers
+    sin:  mapList(typeCheck(Math.sin, "number")),
+    cos:  mapList(typeCheck(Math.cos, "number")),
+    tan:  mapList(typeCheck(Math.tan, "number")),
+    asin: mapList(typeCheck(Math.asin, "number")),
+    acos: mapList(typeCheck(Math.acos, "number")),
+    atan: mapList(typeCheck(Math.atan, "number")),
+    log:  mapList(typeCheck(Math.log, "number")),
+    exp:  mapList(typeCheck(Math.exp, "number")),
+    sqrt: mapList(typeCheck(Math.sqrt, "number")),
+    max: typeCheck(Math.max, "number"),
+    min: typeCheck(Math.max, "number"),
+    round: xen.round,
+    ceil:  xen.ceil,
+    floor: xen.floor,
+    abs: xen.abs,
     random: (n) => {
         if (!n) return Math.random();
         let result = new List();
@@ -916,7 +968,7 @@ var parse = function(tokens) {
     infix(":", 7.5);
     infix("#", 7.3);
     prefix("#", 7);
-    //prefix(":", 7);
+    prefix(":", 7);
     //unary operators
     prefix("-", 6.5);
     prefix("+", 6.5);
@@ -971,7 +1023,7 @@ var evaluate = function(parseTree) {
         "*": xen.multiply,
         "/": xen.divide,
         "%": xen.mod,
-        "^": xen.pow,
+        "^": elementWise(mapList(typeCheck(Math.pow, "number"))),
         ":": xen.colon,
         "#": xen.et,
         "c": xen.cents,
