@@ -24,7 +24,7 @@ header {
     padding: 10px 0px 5px 15px;
 }
 
-.link {
+a.link, a.link:visited, a.link:focus, a.link:active {
     -webkit-transition: color 0.2s;
     -moz-transition: color 0.2s;
     transition: color 0.2s;
@@ -32,7 +32,7 @@ header {
     text-decoration: none;
 }
 
-.link:hover {
+a.link:hover {
     color: rgb(82, 204, 82);
 }
 
