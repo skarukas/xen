@@ -38,7 +38,7 @@ ratios for a given et interval.
 
 see https://github.com/skarukas/xen/wiki for full documentation.
 
-console-specific commands:
+useful commands:
  - clear    clear the console
  - ans      a variable storing the previous answer
 `;
