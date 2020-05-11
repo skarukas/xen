@@ -277,6 +277,12 @@ xen.ratio = elementWise(mapList(function(a, b) {
     }
 }));
 
+xen.normalize = mapList(function(a) {
+    assertDefined(1, arguments);
+
+    return xen.mod(a, tune.FreqRatio(2));
+});
+
 /**
  * Rounds a ratio to make it simpler
  * 
@@ -684,7 +690,10 @@ var waves = {
     square: Symbol("square"),
 }
 
-var variables = {
+/**
+ * Public xen language variables
+ */
+const variables = {
     ans: undefined,
     pi: Math.PI,
     e: Math.E,
@@ -701,7 +710,10 @@ var variables = {
     rect: waves.square,
 };
 
-var functions = {
+/**
+ * Public xen language functions
+ */
+const functions = {
     // function that only work on numbers
     sin:  mapList(typeCheck(Math.sin, "number")),
     cos:  mapList(typeCheck(Math.cos, "number")),
@@ -734,6 +746,7 @@ var functions = {
     "'": xen.list,
     // xen functions
     inverse: xen.inverse,
+    normalize: xen.normalize,
     mtof: xen.mtof,
     ftom: xen.ftom,
     play: xen.play,
