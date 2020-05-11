@@ -335,7 +335,7 @@ xen.closest = function(interval, maxErr, numRatios) {
         // return ET numbers
         if (displayType(interval) == 'list') return List.from(tune.ET.bestFitETs(interval, undefined, numRatios));
         // return intervals that are close
-        return (displayType(interval) == 'ratio')? xen.closestETs(interval, maxErr, numRatios) : xen.closestRatios(interval, maxErr, numRatios);
+        return (displayType(interval) == 'ratio')? xen.closestETs(interval, numRatios) : xen.closestRatios(interval, maxErr, numRatios);
     } catch (e) {
         throw new TypeError(`Incompatible type(s) for closest().
         ${givenVals(...arguments)}`);
@@ -343,7 +343,7 @@ xen.closest = function(interval, maxErr, numRatios) {
 };
 
 // private (no type checking or error handline)
-xen.closestETs = function(interval, maxErr, numETs) {
+xen.closestETs = function(interval, numETs) {
     let errorArr = new List();
     let maxBase = 53;
     let base = 1;
