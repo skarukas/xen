@@ -63,6 +63,8 @@ function xenTest(input, expectVal, expectType) {
 /**
  * A collection of tests for all xen functions. Running method `addExample(category, comment?)`
  * will add the input/output/comment to the set of examples for `category` if they match the expected values
+ * 
+ * Right now, nothing's done with the examples but it would be nice to display them somewhere.
  */
 const tests = {
     add() {
@@ -403,6 +405,15 @@ const tests = {
         xenTest("et(19,100c)",  "error");
         xenTest("et(19,4:3)",   "error");
         xenTest("et(19,#4)",    "error");
+
+        // 3 arg constructor
+        xenTest("et(8,19,2:1)",  "8#19",  "et");
+        xenTest("et(1,13,3:1)",  "1#8.2", "et");
+        xenTest("et(1,13,#(3:1))","1#8.2", "et");
+        xenTest("et(4,12,2400c)","4#6",   "et");
+        xenTest("et(4,12,100hz)","4#12",   "et"); // non-intervals have no effect
+        xenTest("et(4,12,100)",  "4#12",   "et"); // non-intervals have no effect
+
 
         // list mapping
         xenTest("et('(1, 3, 5),19)", "'(1#19,3#19,5#19)", "list");

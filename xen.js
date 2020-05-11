@@ -404,10 +404,16 @@ function coprime(a, b) {
     return a == 1; // a = gcd
 }
 
-xen.et = elementWise(mapList(function(a, b) {
+xen.et = elementWise(mapList(function(a, b, c) {
     assertDefined(1, arguments);
     
     try {
+
+        // If third argument (octave size) is specified, scale b
+        if (isInterval(c)) {
+            let octaveRatioAsDecimal = xen.ratio(c).decimal();
+            b = b * tune.Util.log(2, octaveRatioAsDecimal);
+        }
         if (b && typeof b != 'number') throw "";
         switch (displayType(a)) {
             case "number": return tune.ETInterval(a, b);
@@ -721,7 +727,7 @@ const functions = {
     asin: mapList(typeCheck(Math.asin, "number")),
     acos: mapList(typeCheck(Math.acos, "number")),
     atan: mapList(typeCheck(Math.atan, "number")),
-    log:  mapList(typeCheck(Math.log, "number")),
+    log:  mapList(typeCheck(tune.Util.log, "number")), // tune version allows argument for base
     exp:  mapList(typeCheck(Math.exp, "number")),
     sqrt: mapList(typeCheck(Math.sqrt, "number")),
     max: typeCheck(Math.max, "number"),
