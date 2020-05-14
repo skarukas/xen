@@ -136,8 +136,8 @@ function evaluateXenExpr() {
     }
     // reset input order
     while (futureInputs.length) pastInputs.push(futureInputs.pop());
-    // add to stack
-    pastInputs.push(inputExpr);
+    // add to stack if not empty string
+    if (inputExpr) pastInputs.push(inputExpr);
     codeInput.value = "";
     codeInput.scrollIntoView();
 }
