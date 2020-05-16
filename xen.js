@@ -1070,10 +1070,11 @@ var evaluate = function(parseTree) {
             variables[node.name] = parseNode(node.value);
         }
         else if (node.type === "call") {
-            for (var i = 0; i < node.args.length; i++) node.args[i] = parseNode(node.args[i]);
+            let args = [];
+            for (var i = 0; i < node.args.length; i++) args[i] = parseNode(node.args[i]);
             let fn = functions[node.name];
             if (typeof fn === 'undefined') throw node.name + "() is undefined";
-            return fn.apply(null, node.args);
+            return fn(...args);
         }
         else if (node.type === "function") {
             functions[node.name] = function() {
