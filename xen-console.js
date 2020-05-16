@@ -144,3 +144,16 @@ evaluate(`avg(x, y) = @js {
     let sum = add(x, y);
     return divide(sum, 2);
 }`);
+
+evaluate(`@js {
+    myAvg = function(x, y) {
+        let sum = add(x, y);
+        return divide(sum, 2);
+    }
+}`);
+
+evaluate(`@tag scl {
+    let arr = content.split(" ");
+    arr = arr.filter((ln) => ln && (ln[0] != "!"));
+    return arr;
+}`);

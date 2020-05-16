@@ -810,7 +810,8 @@ function elementWise(fn) {
     }
 }
 
-const blockTypes = ["js"];
+// stores all available tags (@tagname)
+const tags = {};
 //  ********* LEXER *********
 
 var lex = function(input) {
@@ -868,35 +869,44 @@ var lex = function(input) {
             else addToken("identifier", idn);
         } else if (isBlock(c)) {
             // recover block type identifier
-            let idn = "";
-            while (isIdentifier(advance())) idn += c;
-            if (!blockTypes.includes(idn)) throw "Block not recognized.";
+            let tag = "";
+            while (isIdentifier(advance())) tag += c;
+            if (! (tag in tags)) throw `Invalid tag.
+            Available Tags: ${Object.keys(tags).map(tg => " @" + tg)}`;
 
             // get rid of whitespace after block declaration
             while (isWhiteSpace(advance()));
 
-            let blockString = "";
-            if (c == "{") {
+            // pre-block content (if any)
+            let pre = "";
+            // block content (if any)
+            let block = "";
+
+            do { 
+                if (c == "{") {
+                    parseBlock(); 
+                    break;
+                } else {
+                    pre += c;
+                }
+            } while(advance() != "\n" && c != undefined);
+
+            function parseBlock() {
                 // block of code--process until the end of the block (e.g. brackets are balanced)
 
                 c = ""; // stops the first bracket from being added
                 let bracketCount = 1;
                 while (bracketCount != 0) {
-                    blockString += c;
+                    block += c;
                     advance();
                     if (c == "}") bracketCount--;
                     else if (c == "{") bracketCount++;
                     else if (c == undefined) throw new SyntaxError("Incomplete block.");
                 }
                 advance();
-            } else {
-                // single statement, so process until a line break
-                do { 
-                    blockString += c; 
-                } while(advance() != "\n" && c != undefined) 
             }
 
-            addToken(idn, blockString);
+            addToken("block", {tag, pre, block});
         } else {
             throw "Unrecognized token.";
         }
@@ -1015,8 +1025,8 @@ var parse = function(tokens) {
         return name;
     });
 
-    // @js does not process the block until evaluation
-    prefix("js", 9, (block) => block);
+    // blocks are not parsed until evaluation
+    prefix("block", 9, (data) => data);
 
     prefix("(", 8, function() {
         let value = expression(2);
@@ -1073,30 +1083,91 @@ var parse = function(tokens) {
     return parseTree;
 };
 
+var operators = {
+    "+": xen.add,
+    "-": xen.subtract,
+    "*": xen.multiply,
+    "/": xen.divide,
+    "%": xen.mod,
+    "^": elementWise(mapList(typeCheck(Math.pow, "number"))),
+    ":": xen.colon,
+    "#": xen.et,
+    "c": xen.cents,
+    "hz": xen.freq,
+    ";": xen.null
+};
+
+var args = {};
+
+// add an available tag to the array
+function addTag(name, op) {
+    tags[name] = op;
+}
+
+
+// @js evaluates the block as JavaScript
+addTag("js", function(pre, block, vars, argv) {
+    // only parse block, or pre as an expression if there is no block.
+    block = block || ("return " + pre);
+
+    let executeBlock;
+    try {
+        // pass in variables to put them in scope
+        executeBlock = new Function("xen", "args",
+        `// all variables undeclared or declared with 'var' will be added to xen
+        function storeVars(target) {
+            return new Proxy(target, {
+                has(target, prop) { return true; },
+                get(target, prop) { 
+                    // function scope, local scope, then global scope
+                    if (prop in args)   return args[prop];
+                    if (prop in target) return target[prop];
+                    return window[prop];
+                }
+            });
+        }
+
+        with(storeVars(xen)) {
+            // run the code
+            ${block};
+        }`);
+    } catch(e) {
+        throw "Error Parsing JavaScript.\n" + e;
+    }
+
+    try {
+        return executeBlock(vars, argv);
+    } catch(e) {
+        throw "Error Running JavaScript.\n" + e;
+    }
+});
+
+// @comment does nothing to the block
+addTag("comment");
+
+// @tag defines a new type of block 
+//     M E T A
+addTag("tag", function(name, blockDefinition) {
+    if (!name) throw new SyntaxError(`Block definitions must be given a name.`);
+    name = name.trim(); // remove whitespace
+
+    let blockFn = new Function("pre", "content", blockDefinition);
+
+    try {
+        addTag(name, blockFn);
+    } catch(e) {
+        throw "Error Running JavaScript.\n" + e;
+    }
+});
 
 //  ********* EVALUATOR *********
 
 var evaluate = function(parseTree) {
 
-    var operators = {
-        "+": xen.add,
-        "-": xen.subtract,
-        "*": xen.multiply,
-        "/": xen.divide,
-        "%": xen.mod,
-        "^": elementWise(mapList(typeCheck(Math.pow, "number"))),
-        ":": xen.colon,
-        "#": xen.et,
-        "c": xen.cents,
-        "hz": xen.freq,
-        ";": xen.null
-    };
-
-    var args = {};
-
     var parseNode = function(node) {
-        if (node.type === "number") return node.value;
-        else if (operators[node.type]) {
+        if (node.type === "number") {
+            return node.value;
+        } else if (operators[node.type]) {
             // : is the only operator that does not map lists by default (due to compound ratio expansions)
             let fn = operators[node.type];
             if (node.right && node.left) return fn(parseNode(node.left), parseNode(node.right)); // binary
@@ -1123,43 +1194,11 @@ var evaluate = function(parseTree) {
                 args = {};
                 return ret;
             };
-        } else if (node.type === "js") {
-            let executeBlock;
-
-            try {
-                // pass in variables to put them in scope
-                executeBlock = new Function("xen", "args",
-                `// all variables undeclared or declared with 'var' will be added to xen
-                function storeVars(target) {
-                    return new Proxy(target, {
-                        has(target, prop) { return true; },
-                        get(target, prop) { 
-                            // function scope, local scope, then global scope
-                            if (prop in args)   return args[prop];
-                            if (prop in target) return target[prop];
-                            return window[prop];
-                        }
-                    });
-                }
-
-                with(storeVars(xen)) {
-                    // run the code
-                    ${node.value};
-                }`);
-            } catch(e) {
-                throw "Error Parsing JavaScript.\n" + e;
-            }
-
-            try {
-                let result = executeBlock(variables, args);
-                if (typeof result == "string") {
-                    throw new Error(`This JavaScript code produced a string, which is not supported by xen.
-                    This may be a result of trying to use arithmetic operators on xen types within JS code.`);
-                }
-                return result;
-            } catch(e) {
-                throw "Error Running JavaScript.\n" + e;
-            }
+        } else if (node.type === "block") {
+            let value = node.value;
+            let fn = tags[value.tag];
+            if (fn == undefined) return;
+            return fn(value.pre, value.block, variables, args);
         }
     };
 

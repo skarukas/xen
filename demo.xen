@@ -1,0 +1,34 @@
+@comment {
+    xen DEMO
+    this is a comment.
+    The "@comment" syntax is a tag denoting a type of block.
+
+    Tags and their associated block types include:
+    - @js        a block of JavaScript code
+    - @scl       parses the block as a .scl Scala tuning file
+    - @comment   doesn't run the block at all
+
+    Blocks may be single line or multiline.
+
+    @comment Here's my inline comment
+    @comment {
+        Here's my multiline comment
+    }
+}
+
+
+@comment {
+    The parseMidi function is run automatically on MIDI input.
+    It takes in a list of MIDI pitches (numbers) and, optionally, a list of velocities (numbers)
+    and it returns a list of `notes` (cents, et, or freq) to be played back.
+    You can redefine it here.
+    This is an example of a function declaration whose body is written in JS.
+}
+
+@comment - This function turns the input into indexes of 31-tone ET
+parseMidi(pList) = pList # 31
+
+@comment - This does the same but is written with a JS block
+parseMidi(pList) = @js {
+    let result = pList
+}
