@@ -516,6 +516,24 @@ const tests = {
 
         // list mapping
         xenTest("'(#69, 440hz, 6900) c", "'(6900c,6900c,6900c)", "list");
+    },
+    js() {
+        
+        xenTest(
+            `@js {
+                a = 440;
+                sum = function(li) {
+                    let total = li[0];
+                    for (let i = 1; i < li.length; i++) {
+                        total = add(total, li[i]);
+                    }
+                    return total;
+                }
+                return 56;
+            }`, "56", "number");
+        xenTest("a", "440");
+        xenTest("sum(#'(4, 5, 6, 7))", "22#12", "et");
+        xenTest("sum('(4, 5, 6, 7))",  "22", "number");
     }
 }
 
@@ -535,6 +553,7 @@ function test() {
     tests.hz();
     tests.cents();
     tests.c();
+    tests.js();
 
     //console.log(examples);
 

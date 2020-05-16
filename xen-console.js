@@ -118,12 +118,10 @@ function evaluateXenExpr() {
     else {
         // evaluate xen code
         try {
-            // not case sensitive
-            inputExpr = inputExpr.toLowerCase();
             // convert the previous answer with prefix operator
             if (inputExpr == "#" || inputExpr == ":") inputExpr = inputExpr + " ans";
             // convert the previous answer with postfix operator
-            else if (inputExpr == "c" || inputExpr == "hz") inputExpr = "ans " + inputExpr;
+            else if (inputExpr.toLowerCase() == "c" || inputExpr.toLowerCase() == "hz") inputExpr = "ans " + inputExpr;
             // evaluate the current expression
             let allResults = evaluate(inputExpr);
             // display all returned values

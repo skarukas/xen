@@ -12,6 +12,7 @@
  * 
  * TODO: 
  * - debug function definitions
+ * - make line break and semicolon seperate statements
  */
 
 //import tune from "./tune"; // defined globally from tune.js
@@ -697,7 +698,7 @@ var waves = {
 }
 
 /**
- * Public xen language variables
+ * Public xen language variables and functions
  */
 const variables = {
     ans: undefined,
@@ -714,12 +715,14 @@ const variables = {
     tri: waves.tri,
     square: waves.square,
     rect: waves.square,
-};
 
-/**
- * Public xen language functions
- */
-const functions = {
+    //// Functions
+    // operator substitutes
+    add: xen.add,
+    subtract: xen.subtract,
+    multiply: xen.multiply,
+    divide: xen.divide,
+    mod: xen.mod,
     // function that only work on numbers
     sin:  mapList(typeCheck(Math.sin, "number")),
     cos:  mapList(typeCheck(Math.cos, "number")),
@@ -807,7 +810,7 @@ function elementWise(fn) {
     }
 }
 
-
+const decorators = ["js"];
 //  ********* LEXER *********
 
 var lex = function(input) {
@@ -820,8 +823,11 @@ var lex = function(input) {
         isWhiteSpace = function(c) {
             return /\s/.test(c);
         },
+        isDecorator = function(c) {
+            return c == "@";
+        },
         isIdentifier = function(c) {
-            return typeof c === "string" && !isOperator(c) && !isDigit(c) && !isWhiteSpace(c);
+            return typeof c === "string" && !isOperator(c) && !isDigit(c) && !isWhiteSpace(c) && !isDecorator(c);
         };
 
     var tokens = [],
@@ -837,12 +843,12 @@ var lex = function(input) {
     };
     while (i < input.length) {
         c = input[i];
-        if (isWhiteSpace(c)) advance();
-        else if (isOperator(c)) {
+        if (isWhiteSpace(c)) {
+            advance();
+        } else if (isOperator(c)) {
             addToken(c);
             advance();
-        }
-        else if (isDigit(c)) {
+        } else if (isDigit(c)) {
             var num = c;
             while (isDigit(advance())) num += c;
             if (c === ".") {
@@ -852,8 +858,7 @@ var lex = function(input) {
             num = parseFloat(num);
             if (!isFinite(num)) throw "Number is too large or too small for a 64-bit double.";
             addToken("number", num);
-        }
-        else if (isIdentifier(c)) {
+        } else if (isIdentifier(c)) {
             var idn = c;
             while (isIdentifier(advance())) idn += c;
 
@@ -861,8 +866,40 @@ var lex = function(input) {
             if (idn.toLowerCase() == "c")  addToken("c");
             else if (idn.toLowerCase() == "hz") addToken("hz");
             else addToken("identifier", idn);
+        } else if (isDecorator(c)) {
+            // recover decorator identifier
+            let idn = "";
+            while (isIdentifier(advance())) idn += c;
+            if (!decorators.includes(idn)) throw "Decorator not recognized.";
+
+            // get rid of whitespace after decorator
+            while (isWhiteSpace(advance()));
+
+            let blockString = "";
+            if (c == "{") {
+                // block of code--process until the end of the block (e.g. brackets are balanced)
+
+                c = ""; // stops the first bracket from being added
+                let bracketCount = 1;
+                while (bracketCount != 0) {
+                    blockString += c;
+                    advance();
+                    if (c == "}") bracketCount--;
+                    else if (c == "{") bracketCount++;
+                    else if (c == undefined) throw new SyntaxError("Incomplete decorator block.");
+                }
+                advance();
+            } else {
+                // single statement, so process until a line break
+                do { 
+                    blockString += c; 
+                } while(advance() != "\n" && c != undefined) 
+            }
+
+            addToken(idn, blockString);
+        } else {
+            throw "Unrecognized token.";
         }
-        else throw "Unrecognized token.";
     }
     addToken("(end)");
     return tokens;
@@ -956,6 +993,7 @@ var parse = function(tokens) {
     prefix("number", 9, function(number) {
         return number;
     });
+    
     prefix("identifier", 9, function(name) {
         if (token().type === "(") {
             var args = [];
@@ -976,6 +1014,9 @@ var parse = function(tokens) {
         }
         return name;
     });
+
+    // @js decorator does not process the block at all
+    prefix("js", 9, (block) => block);
 
     prefix("(", 8, function() {
         let value = expression(2);
@@ -1060,23 +1101,20 @@ var evaluate = function(parseTree) {
             let fn = operators[node.type];
             if (node.right && node.left) return fn(parseNode(node.left), parseNode(node.right)); // binary
             return fn(parseNode(node.right || node.left)); // unary
-        }
-        else if (node.type === "identifier") {
+        } else if (node.type === "identifier") {
             var value = args.hasOwnProperty(node.value) ? args[node.value] : variables[node.value];
             if (typeof value === "undefined") throw node.value + " is undefined";
+            if (value instanceof Function) throw new SyntaxError(`Missing parentheses in call to ${node.value}()`);
             return value;
-        }
-        else if (node.type === "assign") {
+        } else if (node.type === "assign") {
             variables[node.name] = parseNode(node.value);
-        }
-        else if (node.type === "call") {
+        } else if (node.type === "call") {
             for (var i = 0; i < node.args.length; i++) node.args[i] = parseNode(node.args[i]);
-            let fn = functions[node.name];
+            let fn = variables[node.name];
             if (typeof fn === 'undefined') throw node.name + "() is undefined";
             return fn.apply(null, node.args);
-        }
-        else if (node.type === "function") {
-            functions[node.name] = function() {
+        } else if (node.type === "function") {
+            variables[node.name] = function() {
                 for (var i = 0; i < node.args.length; i++) {
                     args[node.args[i].value] = arguments[i];
                 }
@@ -1084,6 +1122,40 @@ var evaluate = function(parseTree) {
                 args = {};
                 return ret;
             };
+        } else if (node.type === "js") {
+            let executeBlock;
+
+            try {
+                // pass in variables to put them in scope
+                executeBlock = new Function("variables", 
+                `// all variables undeclared or declared with 'var' will be added to variables
+                function storeVars(target) {
+                    return new Proxy(target, {
+                        has(target, prop) { return true; },
+                        get(target, prop) { 
+                            return (prop in target ? target : window)[prop];
+                        }
+                    });
+                }
+
+                with(storeVars(variables)) {
+                    // run the code
+                    ${node.value};
+                }`);
+            } catch(e) {
+                throw "Error Parsing JavaScript.\n" + e;
+            }
+
+            try {
+                let result = executeBlock(variables);
+                if (typeof result == "string") {
+                    throw new Error(`This JavaScript code produced a string, which is not supported by xen.
+                    This may be a result of trying to use arithmetic operators on xen types within JS code.`);
+                }
+                return result;
+            } catch(e) {
+                throw "Error Running JavaScript.\n" + e;
+            }
         }
     };
 
