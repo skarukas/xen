@@ -1087,7 +1087,7 @@ var evaluate = function(parseTree) {
             };
         }
     };
-
+ 
     // eval the parseTree, returning all vals in an array of value-type pairs
     let output = parseTree.map((node) => {
         var value = parseNode(node);
