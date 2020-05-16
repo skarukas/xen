@@ -139,3 +139,8 @@ function evaluateXenExpr() {
     codeInput.value = "";
     codeInput.scrollIntoView();
 }
+
+evaluate(`avg(x, y) = @js {
+    let sum = add(x, y);
+    return divide(sum, 2);
+}`);

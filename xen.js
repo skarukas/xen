@@ -677,7 +677,7 @@ function givenVals(...args) {
  * Determine how to display type names
  */
 function displayType(data) {
-    return (typeof data === 'undefined')? "undefined" : (typeMap[data.constructor.name] || "unknown type");
+    return (typeof data === 'undefined')? "undefined" : (typeMap[data.constructor.name] || data.constructor.name.toLowerCase());
 }
 
 const typeMap = {
@@ -810,7 +810,7 @@ function elementWise(fn) {
     }
 }
 
-const decorators = ["js"];
+const blockTypes = ["js"];
 //  ********* LEXER *********
 
 var lex = function(input) {
@@ -823,11 +823,11 @@ var lex = function(input) {
         isWhiteSpace = function(c) {
             return /\s/.test(c);
         },
-        isDecorator = function(c) {
+        isBlock = function(c) {
             return c == "@";
         },
         isIdentifier = function(c) {
-            return typeof c === "string" && !isOperator(c) && !isDigit(c) && !isWhiteSpace(c) && !isDecorator(c);
+            return typeof c === "string" && !isOperator(c) && !isDigit(c) && !isWhiteSpace(c) && !isBlock(c);
         };
 
     var tokens = [],
@@ -866,13 +866,13 @@ var lex = function(input) {
             if (idn.toLowerCase() == "c")  addToken("c");
             else if (idn.toLowerCase() == "hz") addToken("hz");
             else addToken("identifier", idn);
-        } else if (isDecorator(c)) {
-            // recover decorator identifier
+        } else if (isBlock(c)) {
+            // recover block type identifier
             let idn = "";
             while (isIdentifier(advance())) idn += c;
-            if (!decorators.includes(idn)) throw "Decorator not recognized.";
+            if (!blockTypes.includes(idn)) throw "Block not recognized.";
 
-            // get rid of whitespace after decorator
+            // get rid of whitespace after block declaration
             while (isWhiteSpace(advance()));
 
             let blockString = "";
@@ -886,7 +886,7 @@ var lex = function(input) {
                     advance();
                     if (c == "}") bracketCount--;
                     else if (c == "{") bracketCount++;
-                    else if (c == undefined) throw new SyntaxError("Incomplete decorator block.");
+                    else if (c == undefined) throw new SyntaxError("Incomplete block.");
                 }
                 advance();
             } else {
@@ -1015,7 +1015,7 @@ var parse = function(tokens) {
         return name;
     });
 
-    // @js decorator does not process the block at all
+    // @js does not process the block until evaluation
     prefix("js", 9, (block) => block);
 
     prefix("(", 8, function() {
@@ -1109,10 +1109,11 @@ var evaluate = function(parseTree) {
         } else if (node.type === "assign") {
             variables[node.name] = parseNode(node.value);
         } else if (node.type === "call") {
-            for (var i = 0; i < node.args.length; i++) node.args[i] = parseNode(node.args[i]);
+            let args = [];
+            for (var i = 0; i < node.args.length; i++) args[i] = parseNode(node.args[i]);
             let fn = variables[node.name];
             if (typeof fn === 'undefined') throw node.name + "() is undefined";
-            return fn.apply(null, node.args);
+            return fn(...args);
         } else if (node.type === "function") {
             variables[node.name] = function() {
                 for (var i = 0; i < node.args.length; i++) {
@@ -1127,18 +1128,21 @@ var evaluate = function(parseTree) {
 
             try {
                 // pass in variables to put them in scope
-                executeBlock = new Function("variables", 
-                `// all variables undeclared or declared with 'var' will be added to variables
+                executeBlock = new Function("xen", "args",
+                `// all variables undeclared or declared with 'var' will be added to xen
                 function storeVars(target) {
                     return new Proxy(target, {
                         has(target, prop) { return true; },
                         get(target, prop) { 
-                            return (prop in target ? target : window)[prop];
+                            // function scope, local scope, then global scope
+                            if (prop in args)   return args[prop];
+                            if (prop in target) return target[prop];
+                            return window[prop];
                         }
                     });
                 }
 
-                with(storeVars(variables)) {
+                with(storeVars(xen)) {
                     // run the code
                     ${node.value};
                 }`);
@@ -1147,7 +1151,7 @@ var evaluate = function(parseTree) {
             }
 
             try {
-                let result = executeBlock(variables);
+                let result = executeBlock(variables, args);
                 if (typeof result == "string") {
                     throw new Error(`This JavaScript code produced a string, which is not supported by xen.
                     This may be a result of trying to use arithmetic operators on xen types within JS code.`);
