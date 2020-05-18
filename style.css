@@ -1,6 +1,7 @@
 body {
     margin: 0px;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     -webkit-transition: color 1s linear, background-color 1s linear;
     -moz-transition: color 1s linear, background-color 1s linear;
     transition: color 1s linear, background-color 1s linear;
@@ -17,11 +18,18 @@ body {
     width: 100%;
 }
 
+#code-container {
+    display: flex;
+    border-bottom: 2px solid grey;
+    border-top: 2px solid grey;
+}
+
 header {
     display: flex;
     justify-content: space-between;
     font-size: 1em;
     padding: 10px 0px 5px 15px;
+    /* border-bottom: 2px solid grey; */
 }
 
 a.link, a.link:visited, a.link:focus, a.link:active {
@@ -43,17 +51,43 @@ a.link:hover {
     overflow-wrap: break-word;
     height: 65vh;
     font-size: 1em;
-    padding: 0px 0px 10px 15px;
+    padding: 0px;
 }
 #codeInput {
+    width: 95%;
+    height: 100%;
     outline: none;
     border: none;
     border-color: transparent;
     background: none;
     font-family: monospace;
     font-size: 1em;
-    width: 95%;
 }
+
+/* #definitions {
+    outline: none;
+    resize: none;
+    width: 100%;
+    height: 100%;
+    font-size: 1em;
+    -moz-tab-size : 4;
+    -o-tab-size : 4;
+    tab-size : 4;
+}
+ */
+#editor {
+    flex: 1;
+    height: 100%;
+    width: 60vw;
+    font-size: 14px;
+}
+
+#editor div {
+    -webkit-transition: color .2s linear, background-color 0.2s linear;
+    -moz-transition: color .2s linear, background-color 0.2s linear;
+    transition: color .2s linear, background-color .2s linear;
+}
+
 #codeInput:focus {
     outline-width: 0;
 }
@@ -69,11 +103,23 @@ a.link:hover {
     color: rgb(185, 72, 72);
 }
 
-.example {
+.cheat-sheet {
     white-space: nowrap;
+    max-width: 40vw;
+    overflow-x: scroll;
+    -webkit-transition: color 1s linear, background-color 1s linear;
+    -moz-transition: color 1s linear, background-color 1s linear;
+    transition: color 1s linear, background-color 1s linear;
+    
+    padding-top: 5px;
+    padding-left: 5px;
+    border-left: 2px solid grey !important; 
+    flex: 1 1;
+}
+
+.example {
     font-size: 1em;
-    padding: 0px 5px;
-    border-left: 3px solid;
+    padding: 10px;
 
     -webkit-order: 0;
     -ms-flex-order: 0;
@@ -90,18 +136,18 @@ a.link:hover {
     border: none;
 }
 
-footer {
+.interactions {
     -webkit-transition: background-color 1s;
     -moz-transition: background-color 1s;
     transition: background-color 1s;
 
-    width: 100%;
-    max-height: 25vh;
-    overflow: scroll;
-    padding: 10px;
+    width: 99%; /* scrollbar was getting buggy */
+    overflow-y: scroll;
+    word-wrap: break-word;
+    padding: 5px;
 
     font-size: 1em;
-    flex: 1 1 auto;
+    flex: 2 1 auto;
 }
 
 .footer-container {
@@ -153,7 +199,7 @@ code {
     color: lightgray;
 }
 
-.dark-switch {
+button {
     margin-right:10px;
     outline: none;
     background: none;
@@ -161,7 +207,11 @@ code {
     color: gray;
 }
 
-.dark-switch:hover {
+button:hover {
     background:gray;
     color: white;
+}
+
+footer {
+    padding: 2px;
 }

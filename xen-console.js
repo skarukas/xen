@@ -2,7 +2,7 @@ import xen from "./xen.js";
 import playback from "./xen-webaudio-playback.js";
 const evaluate = xen.evaluate;
 
-const version = "1.0.0";
+const version = "2.0.0";
 const resultFeed = document.getElementById("result");
 const codeInput = document.getElementById("codeInput");
 codeInput.placeholder=`xen v. ${version}: type 'help' for a brief introduction`;
@@ -42,22 +42,124 @@ useful commands:
  - clear    clear the console
  - ans      a variable storing the previous answer
 `;
-//const helpString = helpText.reduce((rest, e) => rest + "\n" + e);
+/* $('#code-container').hide("slide");
+$('#code-container').height(0); */
+
+var editor = ace.edit("editor");
+editor.setTheme("ace/theme/chrome");
+editor.session.setMode("ace/mode/d");
 
 // dark mode
 $( ".dark-switch" ).on("click", function() {
     if( $( "body" ).hasClass( "dark-primary" )) {
       $( "body" ).removeClass( "dark-primary" );
       $( "#codeInput" ).removeClass( "dark-primary" );
-      $( "footer" ).removeClass( "dark-secondary" );
+      $( ".interactions" ).removeClass( "dark-primary" );
+      $( ".cheat-sheet" ).removeClass( "dark-secondary" );
       $( ".dark-switch" ).text( "dark mode is off" );
+      
+      editor.setTheme("ace/theme/chrome");
     } else {
       $( "body" ).addClass( "dark-primary" );
       $( "#codeInput" ).addClass( "dark-primary" );
-      $( "footer" ).addClass( "dark-secondary" );
+      $( ".interactions" ).addClass( "dark-primary" );
+      $( ".cheat-sheet" ).addClass( "dark-secondary" );
       $( ".dark-switch" ).text( "dark mode is on" );
+
+      editor.setTheme("ace/theme/kr_theme");
     }
 });
+
+// cheat sheet shown by default
+let cheat = true;
+$( ".cheat-toggle").on("click", function() {
+    cheat = !cheat;
+    if (cheat) {
+        $(".cheat-sheet").show();
+        $("#editor").width("60vw");
+    } else {
+        $(".cheat-sheet").hide();
+        $("#editor").width("100vw");
+    }
+});
+
+// definitions area shown by default
+let definitions = true;
+$( ".def-toggle").on("click", function() {
+    definitions = !definitions;
+    if (definitions) {
+        $("#code-container")
+            .show("slide")
+            .height("100%");
+        $(".def-toggle").text("hide definitions");
+        $(".cheat-toggle").show();
+    } else {
+        $("#code-container")
+            .hide("slide")
+            .height("0px");
+        $(".def-toggle").text("show definitions");
+        $("#codeInput").focus()[0].scrollIntoView();
+        $( ".cheat-toggle").hide();
+    }
+});
+
+// cookie handling
+function setCookie(name,value,days) {
+    var expires = "";
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days*24*60*60*1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (encodeURIComponent(value) || "")  + expires + "; path=/";
+}
+function getCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) {
+            let val = c.substring(nameEQ.length,c.length);
+            return decodeURIComponent(val);
+        }
+    }
+    return null;
+}
+function eraseCookie(name) {   
+    document.cookie = name+'=; Max-Age=-99999999;';  
+}
+
+let code = getCookie("codecontent");
+code && $('#definitions').val(code);
+
+$('#definitions').on("keyup", (event) => {
+    let val = event.target.value;
+    setCookie("codecontent",val);
+})
+
+
+$(document).delegate('#definitions', 'keydown', function(e) {
+    var keyCode = e.keyCode || e.which;
+  
+    if (keyCode == 9) {
+      e.preventDefault();
+      var start = this.selectionStart;
+      var end = this.selectionEnd;
+  
+      // set textarea value to: text before caret + tab + text after caret
+      $(this).val($(this).val().substring(0, start)
+                  + "\t"
+                  + $(this).val().substring(end));
+  
+      // put caret at right position again
+      this.selectionStart =
+      this.selectionEnd = start + 1;
+    }
+  });
+
+
+
 
 /**
  * Show the help text in a `pre` element.
@@ -152,8 +254,8 @@ evaluate(`@js {
     }
 }`);
 
-evaluate(`@tag scl {
+/* evaluate(`@macro scl {
     let arr = content.split(" ");
     arr = arr.filter((ln) => ln && (ln[0] != "!"));
     return arr;
-}`);
+}`); */

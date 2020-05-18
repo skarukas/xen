@@ -677,7 +677,7 @@ function givenVals(...args) {
  * Determine how to display type names
  */
 function displayType(data) {
-    return (typeof data === 'undefined')? "undefined" : (typeMap[data.constructor.name] || data.constructor.name.toLowerCase());
+    return (data == undefined)? "undefined" : (typeMap[data.constructor.name] || "javascript " + data.constructor.name.toLowerCase());
 }
 
 const typeMap = {
@@ -764,7 +764,17 @@ const variables = {
     simplify: xen.simplify,
     just: xen.just,
     closest: xen.closest,
+
+    // M E T A
+    xen_eval: (str) => {
+        let results = calculate(str);
+        results = results.filter(e => e != undefined);
+        if (results.length) return results[results.length-1].value;
+    }
 };
+
+// allow JS code to reference and modify the variables object itself
+variables.xen_variables = variables;
 
 /**
  * Takes a function and turns it into a version that applies 
@@ -810,8 +820,8 @@ function elementWise(fn) {
     }
 }
 
-// stores all available tags (@tagname)
-const tags = {};
+// stores all available macros (@macroname)
+const macros = {};
 //  ********* LEXER *********
 
 var lex = function(input) {
@@ -824,11 +834,11 @@ var lex = function(input) {
         isWhiteSpace = function(c) {
             return /\s/.test(c);
         },
-        isBlock = function(c) {
+        isMacro = function(c) {
             return c == "@";
         },
         isIdentifier = function(c) {
-            return typeof c === "string" && !isOperator(c) && !isDigit(c) && !isWhiteSpace(c) && !isBlock(c);
+            return typeof c === "string" && !isOperator(c) && !isDigit(c) && !isWhiteSpace(c) && !isMacro(c);
         };
 
     var tokens = [],
@@ -867,15 +877,16 @@ var lex = function(input) {
             if (idn.toLowerCase() == "c")  addToken("c");
             else if (idn.toLowerCase() == "hz") addToken("hz");
             else addToken("identifier", idn);
-        } else if (isBlock(c)) {
-            // recover block type identifier
-            let tag = "";
-            while (isIdentifier(advance())) tag += c;
-            if (! (tag in tags)) throw `Invalid tag.
-            Available Tags: ${Object.keys(tags).map(tg => " @" + tg)}`;
+        } else if (isMacro(c)) {
+            // recover macro identifier
+            let macroId = "";
+            while (!isWhiteSpace(advance())) macroId += c;
+            if (! (macroId in macros)) throw `Invalid macro.
+            Available Macros: ${Object.keys(macros).map(tg => " @" + tg)}`;
 
-            // get rid of whitespace after block declaration
-            while (isWhiteSpace(advance()));
+            // automatically fixed by trim()
+            /* // get rid of whitespace after macro id
+            while (isWhiteSpace(advance())); */
 
             // pre-block content (if any)
             let pre = "";
@@ -892,9 +903,9 @@ var lex = function(input) {
             } while(advance() != "\n" && c != undefined);
 
             function parseBlock() {
-                // block of code--process until the end of the block (e.g. brackets are balanced)
+                // block of code--process until the end (e.g. brackets are balanced)
 
-                c = ""; // stops the first bracket from being added
+                c = ""; // stops the first bracket char from being added
                 let bracketCount = 1;
                 while (bracketCount != 0) {
                     block += c;
@@ -906,7 +917,7 @@ var lex = function(input) {
                 advance();
             }
 
-            addToken("block", {tag, pre, block});
+            addToken("macro", {macroId, pre, block});
         } else {
             throw "Unrecognized token.";
         }
@@ -1025,8 +1036,8 @@ var parse = function(tokens) {
         return name;
     });
 
-    // blocks are not parsed until evaluation
-    prefix("block", 9, (data) => data);
+    // macros are not parsed until evaluation
+    prefix("macro", 9, (data) => data);
 
     prefix("(", 8, function() {
         let value = expression(2);
@@ -1099,14 +1110,14 @@ var operators = {
 
 var args = {};
 
-// add an available tag to the array
-function addTag(name, op) {
-    tags[name] = op;
+// add an available macro to the array
+function addMacro(name, op) {
+    macros[name] = op;
 }
 
 
 // @js evaluates the block as JavaScript
-addTag("js", function(pre, block, vars, argv) {
+addMacro("js", function(pre, block) {
     // only parse block, or pre as an expression if there is no block.
     block = block || ("return " + pre);
 
@@ -1136,25 +1147,83 @@ addTag("js", function(pre, block, vars, argv) {
     }
 
     try {
-        return executeBlock(vars, argv);
+        return executeBlock(variables, args);
     } catch(e) {
         throw "Error Running JavaScript.\n" + e;
     }
 });
 
-// @comment does nothing to the block
-addTag("comment");
+// @comment (@@) does nothing to the block
+addMacro("comment");
+addMacro("@");
 
-// @tag defines a new type of block 
+addMacro("scl", function(pre, content) {
+    let lines = content.split("\n");
+    let scale = [];
+    let i = 0;
+
+    let regRatio = /(\d+\s*)(\/(\s*\d+))?/; /* [..., a, /b, b] */
+    let regCents = /(\d*\.\d*)/;
+    
+    /* remove empty lines + comments*/
+    while (lines[i].trim() == "" ||lines[i][0] == "!") i++;
+
+    let description = lines[i++];
+    let notesPerOctave = parseInt(lines[i++]);
+
+    while (++i < lines.length) {
+        let line = lines[i];
+        if (line.trim() == "" || line[0] == "!") continue;
+
+        let test;
+        /* N.B. assignment in conditional returns the bool value of test */
+        if (test = line.match(regCents)) {
+            let c = parseFloat(test[1]);
+            scale.push(xen.cents(c));
+        } else if (test = line.match(regRatio)) {
+            let n = parseInt(test[1]);
+            let d = parseInt(test[3] || 1);
+            scale.push(xen.ratio(n, d));
+        } else  {
+            throw "Error in .scl file format." + line
+        }
+    };
+    // option to return all the info
+    if (pre == "*") return { description, notesPerOctave, scale };
+
+    return scale;
+});
+
+// @macro defines a new type of block 
 //     M E T A
-addTag("tag", function(name, blockDefinition) {
+addMacro("macro", function(name, blockDefinition) {
     if (!name) throw new SyntaxError(`Block definitions must be given a name.`);
-    name = name.trim(); // remove whitespace
-
-    let blockFn = new Function("pre", "content", blockDefinition);
+    let generateBlockFn;
+    try {
+        generateBlockFn = new Function("xen", "args",
+        `// all variables undeclared or declared with 'var' will be added to xen
+        function storeVars(target) {
+            return new Proxy(target, {
+                has(target, prop) { return true; },
+                get(target, prop) { 
+                    // function scope, local scope, then global scope
+                    if (prop in args)   return args[prop];
+                    if (prop in target) return target[prop];
+                    return window[prop];
+                }
+            });
+        }
+        with(storeVars(xen)) {
+            return function (pre, content) {
+                ${blockDefinition};
+            }
+        }`);
+    } catch(e) {
+        throw "Error Parsing JavaScript.\n" + e;
+    }
 
     try {
-        addTag(name, blockFn);
+        addMacro(name, generateBlockFn(variables, args));
     } catch(e) {
         throw "Error Running JavaScript.\n" + e;
     }
@@ -1194,11 +1263,11 @@ var evaluate = function(parseTree) {
                 args = {};
                 return ret;
             };
-        } else if (node.type === "block") {
+        } else if (node.type === "macro") {
             let value = node.value;
-            let fn = tags[value.tag];
+            let fn = macros[value.macroId];
             if (fn == undefined) return;
-            return fn(value.pre, value.block, variables, args);
+            return fn(value.pre.trim(), value.block.trim());
         }
     };
 
@@ -1215,7 +1284,10 @@ var evaluate = function(parseTree) {
     });
     return output;
 };
-var calculate = function(input) {
+function calculate(input) {
+    if (! (typeof input == 'string')) throw new TypeError(
+        `Xen code must be input as a string.
+        ${givenVals(input)}`);
     var tokens = lex(input);
     var parseTree = parse(tokens);
     var output = evaluate(parseTree);

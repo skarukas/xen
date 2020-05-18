@@ -1,9 +1,9 @@
 @comment {
     xen DEMO
     this is a comment.
-    The "@comment" syntax is a tag denoting a type of block.
+    The "@comment" syntax is a macro denoting a type of block.
 
-    Tags and their associated block types include:
+    macros and their associated block types include:
     - @js        a block of JavaScript code
     - @scl       parses the block as a .scl Scala tuning file
     - @comment   doesn't run the block at all
@@ -31,4 +31,110 @@ parseMidi(pList) = pList # 31
 @comment - This does the same but is written with a JS block
 parseMidi(pList) = @js {
     let result = pList
+}
+
+
+@macro function {
+    let [fnName, ...argNames] = pre.split(" ");
+    let temps = {};
+    
+    let fn = function(...args) {
+        /* store arguments as temp variables */
+        for (let i = 0; i < argNames.length; i++) {
+            let name = argNames[i];
+            temps[name] = xen_variables[name];
+            xen_variables[name] = args[i];
+        }
+        let result = xen_eval(content);
+        /* bring back original variables */
+        for (let i = 0; i < argNames.length; i++) {
+            let name = argNames[i];
+            xen_variables[name] = temps[name];
+        }
+        
+        return result;
+    };
+    fn.toString = () => `${fnName}(${argNames})`;
+    
+    xen_variables[fnName] = fn;
+    return fn;
+}
+
+@function addFifth a { 
+    q = @function _q a { 
+        abs(a)
+    }
+    a + 3:2
+}
+
+
+@macro repeat {
+    let arr = pre.split(" ");
+    let n = parseInt(arr[0]);
+    let ms = parseInt(arr[1]);
+
+    let i = 0;
+    
+    (function rpt() {
+        xen_eval(content);
+        if (++i != n) window.setTimeout(rpt, ms);
+    })();
+}
+
+range(n) = @js list(...Array(n).keys())
+
+@comment Pass-by-reference for loop
+@macro for {
+    /* no need for parens bb */
+    if (pre[0] == "(") pre = pre.substring(1);
+    if (pre[pre.length-1] == ")") pre = pre.substring(0, pre.length-1);
+    let [varName, op, ...xenCode] = pre.split(" ");
+    let iterable = xen_eval(xenCode.join(" "));
+    
+    let temp = xen_variables[varName];
+    for (let i = 0; i < iterable.length; i++) {
+        /* pass by reference */
+        xen_variables[varName] = iterable[i];
+        xen_eval(content);
+        iterable[i] = xen_variables[varName];
+    }
+    
+    xen_variables[varName] = temp;
+}
+
+@for (i of range(10) + 4) { 
+    @js console.log(i);
+}
+
+x = range(100)
+
+@for i in x { 
+    i = i + 1 
+}
+
+x @comment x is changed now
+
+@repeat 5 2000 { 
+    _x = random(6) * 500 + 200
+    play(just(_x))
+}
+
+myScale = @scl {
+    ! meanquar.scl
+    !
+    1/4-comma meantone scale. Pietro Aaron's temperament (1523)
+     12
+    !
+     76.04900
+     193.15686
+     310.26471
+     5/4
+     503.42157
+     579.47057
+     696.57843
+     25/16
+     889.73529
+     1006.84314
+     1082.89214
+     2/1
 }
