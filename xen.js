@@ -834,11 +834,11 @@ var lex = function(input) {
         isWhiteSpace = function(c) {
             return /\s/.test(c);
         },
-        isMacro = function(c) {
+/*         isMacro = function(c) {
             return c == "@";
-        },
+        }, */
         isIdentifier = function(c) {
-            return typeof c === "string" && !isOperator(c) && !isDigit(c) && !isWhiteSpace(c) && !isMacro(c);
+            return typeof c === "string" && !isOperator(c) && !isDigit(c) && !isWhiteSpace(c); /* && !isMacro(c); */
         };
 
     var tokens = [],
@@ -873,20 +873,51 @@ var lex = function(input) {
             var idn = c;
             while (isIdentifier(advance())) idn += c;
 
-            // catch the postfix operators
-            if (idn.toLowerCase() == "c")  addToken("c");
-            else if (idn.toLowerCase() == "hz") addToken("hz");
+            // catch the reserved macros
+            if (idn in macros) {
+                // pre-block content (if any)
+                let pre = "";
+                // block content (if any)
+                let block = "";
+
+                do { 
+                    if (c == "{") {
+                        parseBlock(); 
+                        break;
+                    } else {
+                        pre += c;
+                    }
+                } while(advance() != "\n" && c != undefined);
+
+                function parseBlock() {
+                    // block of code--process until the end (e.g. brackets are balanced)
+
+                    c = ""; // stops the first bracket char from being added
+                    let bracketCount = 1;
+                    while (bracketCount != 0) {
+                        block += c;
+                        advance();
+                        if (c == "}") bracketCount--;
+                        else if (c == "{") bracketCount++;
+                        else if (c == undefined) throw new SyntaxError("Incomplete block.");
+                    }
+                    advance();
+                }
+                pre = pre.trim();
+                block = block.trim();
+
+                addToken("macro", {macroId: idn, pre, block});
+            } else if (idn.toLowerCase() == "c")  addToken("c");
+            else if (idn.toLowerCase() == "hz")   addToken("hz");
             else addToken("identifier", idn);
-        } else if (isMacro(c)) {
+        } else {
+            throw "Unrecognized token.";
+        }/*else if (isMacro(c)) {
             // recover macro identifier
             let macroId = "";
             while (!isWhiteSpace(advance())) macroId += c;
-            if (! (macroId in macros)) throw `Invalid macro.
-            Available Macros: ${Object.keys(macros).map(tg => " @" + tg)}`;
-
-            // automatically fixed by trim()
-            /* // get rid of whitespace after macro id
-            while (isWhiteSpace(advance())); */
+/*             if (! (macroId in macros)) throw `Invalid macro.
+            Available Macros: ${Object.keys(macros).map(tg => " @" + tg)}`; 
 
             // pre-block content (if any)
             let pre = "";
@@ -918,9 +949,7 @@ var lex = function(input) {
             }
 
             addToken("macro", {macroId, pre, block});
-        } else {
-            throw "Unrecognized token.";
-        }
+        } */
     }
     addToken("(end)");
     return tokens;
@@ -1120,7 +1149,7 @@ function addMacro(name, op) {
 addMacro("js", function(pre, block) {
     // only parse block, or pre as an expression if there is no block.
     block = block || ("return " + pre);
-
+    console.log(pre, block);
     let executeBlock;
     try {
         // pass in variables to put them in scope
@@ -1192,6 +1221,37 @@ addMacro("scl", function(pre, content) {
     if (pre == "*") return { description, notesPerOctave, scale };
 
     return scale;
+});
+
+addMacro("function", function(pre, content) {
+        let preReg = /^(?<id>\w*)\((?<args>[\w\s,]*)\)$/;
+        let match = pre.match(preReg);
+        console.log(pre.length);
+        if (!match) throw new SyntaxError("Incorrect function syntax.");
+        let fnName = match.groups.id;
+        let argNames = match.groups.args.split(",").map(e => e.trim());
+        let temps = {};
+        
+        let fn = function(...args) {
+            /* store arguments as temp variables */
+            for (let i = 0; i < argNames.length; i++) {
+                let name = argNames[i];
+                temps[name] = variables[name];
+                variables[name] = args[i];
+            }
+            let result = variables.xen_eval(content);
+            /* bring back original variables */
+            for (let i = 0; i < argNames.length; i++) {
+                let name = argNames[i];
+                variables[name] = temps[name];
+            }
+            
+            return result;
+        };
+        fn.toString = () => `${fnName}(${argNames})`;
+        
+        variables[fnName] = fn;
+        return fn;
 });
 
 // @macro defines a new type of block 
@@ -1267,7 +1327,7 @@ var evaluate = function(parseTree) {
             let value = node.value;
             let fn = macros[value.macroId];
             if (fn == undefined) return;
-            return fn(value.pre.trim(), value.block.trim());
+            return fn(value.pre, value.block);
         }
     };
 

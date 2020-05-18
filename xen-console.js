@@ -242,20 +242,9 @@ function evaluateXenExpr() {
     codeInput.scrollIntoView();
 }
 
-evaluate(`avg(x, y) = @js {
+evaluate(`avg(x, y) = js {
     let sum = add(x, y);
     return divide(sum, 2);
 }`);
 
-evaluate(`@js {
-    myAvg = function(x, y) {
-        let sum = add(x, y);
-        return divide(sum, 2);
-    }
-}`);
-
-/* evaluate(`@macro scl {
-    let arr = content.split(" ");
-    arr = arr.filter((ln) => ln && (ln[0] != "!"));
-    return arr;
-}`); */
+evaluate(`a = js () => console.log("hi") `);
