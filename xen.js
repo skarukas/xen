@@ -628,6 +628,54 @@ xen.play = function(...args) {
     }
 }
 
+xen.consistent = function(limit, edo) {
+    for (let a = 1; a <= limit - 4; a += 2) {
+        for (let b = a + 2; b <= limit - 2; b += 2) {
+            for (let c = b + 2; c <= limit; c += 2) {
+                let ratios = new List(
+                    xen.ratio(b, a),
+                    xen.ratio(c, b),
+                    xen.ratio(c, a));
+                ratios = xen.round( xen.et(ratios, edo) );
+                if (ratios[0].n + ratios[1].n != ratios[2].n) return false;
+            }
+        }
+    }
+    return true;
+}
+/* 
+xen.uniquely_consistent = function(limit, edo) {
+    let check = new Array(edo);
+    for (let a = 1; a <= limit - 4; a += 2) {
+        for (let b = a + 2; b <= limit - 2; b += 2) {
+            for (let c = b + 2; c <= limit; c += 2) {
+                let ratios = new List(
+                    xen.ratio(b, a),
+                    xen.ratio(c, b),
+                    xen.ratio(c, a));
+                ratios = xen.round( xen.et(ratios, edo) );
+                if (ratios[0].n + ratios[1].n != ratios[2].n) return false;
+
+                for (let r of ratios) {
+                    r.n = r.n % edo;
+                    if (!check[r.n]) check[r.n] = 1;
+                    else check[r.n]++;
+                }
+            }
+        }
+    } 
+    console.log(check);
+    return true;
+} */
+
+xen.smallest_consistent = function(limit) {
+    if (limit >= 50) throw new RangeError(`This operation is too complex to be performed with the given value.
+    ${givenVals(limit)}`);
+    let edo = 0;
+    while (!xen.consistent(limit, ++edo));
+    return edo;
+}
+
 // default value for external.playback
 xen.playback = function(freqs) {
     throw "play() is not supported in this implementation.";
@@ -764,6 +812,9 @@ const variables = {
     simplify: xen.simplify,
     just: xen.just,
     closest: xen.closest,
+    consistent: xen.consistent,
+    smallest_consistent: xen.smallest_consistent,
+    uniquely_consistent: xen.uniquely_consistent,
 
     // M E T A
     xen_eval: (str) => {
@@ -826,7 +877,7 @@ const macros = {};
 
 var lex = function(input) {
     var isOperator = function(c) {
-        return /[+\-*\/\^%=(),:;\#]/.test(c);
+        return /[+\-*\/\^%=(),:;\#~]/.test(c);
         },
         isDigit = function(c) {
             return /[0-9]/.test(c);
@@ -1094,6 +1145,8 @@ var parse = function(tokens) {
     infix("+", 3);
     infix("-", 3);
 
+    postfix("~", 2.5);
+
     infix("=", 1, 2, function(left) {
         if (left.type === "call") {
             for (var i = 0; i < left.args.length; i++) {
@@ -1134,7 +1187,11 @@ var operators = {
     "#": xen.et,
     "c": xen.cents,
     "hz": xen.freq,
-    ";": xen.null
+    ";": xen.null,
+    "~": (a) => {
+        xen.play(a);
+        return a;
+    }
 };
 
 var args = {};
