@@ -62,6 +62,11 @@ function isInterval(a) {
     return type == "et" || type == "ratio" || type == "cents";
 }
 
+function isNote(a) {
+    let type = displayType(a);
+    return type == "et" || type == "freq" || type == "cents";
+}
+
 const xen = {};
 
 xen.add = elementWise(mapList(function(a, b) {
@@ -208,6 +213,7 @@ xen.abs = mapList(function(a) {
     }
 });
 
+
 /**
  * Rounds an interval or number
  */
@@ -240,6 +246,40 @@ xen.ceil = mapList(function(a) {
 xen.floor = mapList(function(a) {
     return xen.abstractRound(a, Math.floor);
 });
+
+
+xen.abstractCompare = function(a, b, comp) {
+    let inner = elementWise(mapList(function(a, b) {
+        try {
+            if (isInterval(a) && isInterval(b) || isNote(a) && isNote(b)) {
+                return comp(xen.number(xen.cents(a)), xen.number(xen.cents(b)));
+            } else if (isInterval(a) || isNote(a) || isInterval(b) || isNote(b)) throw "";
+            else return comp(a, b);
+        } catch (e) {
+            console.log(e);
+            throw new TypeError(`Cannot compare the given values.
+            ${givenVals(a, b)}`);
+        }
+    }));
+
+    let result = inner(a, b);
+    if (displayType(result) == 'list') result = result.every(e => e);
+    return result;
+}
+
+
+xen.greaterThan = function(a, b) {
+    return xen.abstractCompare(a, b, (a, b) => a > b);
+}
+
+xen.lessThan = function(a, b) {
+    return xen.abstractCompare(a, b, (a, b) => a < b);
+}
+
+xen.equal = function(a, b) {
+    return xen.abstractCompare(a, b, (a, b) => a == b);
+}
+
 
 
 xen.colon = function(a, b) {
@@ -730,6 +770,7 @@ function displayType(data) {
 
 const typeMap = {
     "Number": "number",
+    "Boolean": "bool",
     "ETInterval": "et",
     "FreqRatio": "ratio",
     "Cents": "cents",
@@ -750,6 +791,8 @@ var waves = {
  */
 const variables = {
     ans: undefined,
+    true: true,
+    false: false,
     pi: Math.PI,
     e: Math.E,
     fifth: tune.JI.fifth,
@@ -871,13 +914,15 @@ function elementWise(fn) {
     }
 }
 
+const twoCharOperators = ["&&", "||", "==", "<=", ">=", "!="];
+
 // stores all available macros (@macroname)
 const macros = {};
 //  ********* LEXER *********
 
 var lex = function(input) {
     var isOperator = function(c) {
-        return /[+\-*\/\^%=(),:;\#~]/.test(c);
+            return /[+\-*\/\^%=(),:;\<>&|!#~]/.test(c);
         },
         isDigit = function(c) {
             return /[0-9]/.test(c);
@@ -885,9 +930,6 @@ var lex = function(input) {
         isWhiteSpace = function(c) {
             return /\s/.test(c);
         },
-/*         isMacro = function(c) {
-            return c == "@";
-        }, */
         isIdentifier = function(c) {
             return typeof c === "string" && !isOperator(c) && !isDigit(c) && !isWhiteSpace(c); /* && !isMacro(c); */
         };
@@ -908,8 +950,20 @@ var lex = function(input) {
         if (isWhiteSpace(c)) {
             advance();
         } else if (isOperator(c)) {
-            addToken(c);
-            advance();
+            let op = c;
+            if (isOperator(advance())) {
+                op += c;
+                if (twoCharOperators.includes(op)) {
+                    addToken(op);
+                    console.log("added",op);
+                } else {
+                    addToken(op[0]), addToken(op[1]);
+                    console.log("added",op[0], op[1]);
+                }
+                advance();
+            } else {
+                addToken(op);
+            }
         } else if (isDigit(c)) {
             var num = c;
             while (isDigit(advance())) num += c;
@@ -963,44 +1017,7 @@ var lex = function(input) {
             else addToken("identifier", idn);
         } else {
             throw "Unrecognized token.";
-        }/*else if (isMacro(c)) {
-            // recover macro identifier
-            let macroId = "";
-            while (!isWhiteSpace(advance())) macroId += c;
-/*             if (! (macroId in macros)) throw `Invalid macro.
-            Available Macros: ${Object.keys(macros).map(tg => " @" + tg)}`; 
-
-            // pre-block content (if any)
-            let pre = "";
-            // block content (if any)
-            let block = "";
-
-            do { 
-                if (c == "{") {
-                    parseBlock(); 
-                    break;
-                } else {
-                    pre += c;
-                }
-            } while(advance() != "\n" && c != undefined);
-
-            function parseBlock() {
-                // block of code--process until the end (e.g. brackets are balanced)
-
-                c = ""; // stops the first bracket char from being added
-                let bracketCount = 1;
-                while (bracketCount != 0) {
-                    block += c;
-                    advance();
-                    if (c == "}") bracketCount--;
-                    else if (c == "{") bracketCount++;
-                    else if (c == undefined) throw new SyntaxError("Incomplete block.");
-                }
-                advance();
-            }
-
-            addToken("macro", {macroId, pre, block});
-        } */
+        }
     }
     addToken("(end)");
     return tokens;
@@ -1134,6 +1151,7 @@ var parse = function(tokens) {
     //unary operators
     prefix("-", 6.5);
     prefix("+", 6.5);
+    prefix("!", 6.5);
     // postfix
     postfix("c", 6.8);
     postfix("hz", 6.8);
@@ -1144,6 +1162,16 @@ var parse = function(tokens) {
     infix("%", 4);
     infix("+", 3);
     infix("-", 3);
+
+    infix(">", 2.80);
+    infix("<", 2.80);
+    infix(">=", 2.80);
+    infix("<=", 2.80);
+
+    infix("==", 2.70);
+    infix("!=", 2.70);
+    infix("&&", 2.65);
+    infix("||", 2.60);
 
     postfix("~", 2.5);
 
@@ -1191,7 +1219,16 @@ var operators = {
     "~": (a) => {
         xen.play(a);
         return a;
-    }
+    },
+    "==": xen.equal,
+    "!=": (a, b) => !xen.equal(a, b),
+    "||": (a, b) => a || b,
+    "&&": (a, b) => a && b,
+    ">=": (a, b) => xen.greaterThan(a, b) || xen.equal(a, b),
+    "<=": (a, b) => xen.lessThan(a, b) || xen.equal(a, b),
+    ">": xen.greaterThan,
+    "<": xen.lessThan,
+    "!": (a) => !a,
 };
 
 var args = {};
