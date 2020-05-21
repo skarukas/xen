@@ -256,7 +256,6 @@ xen.abstractCompare = function(a, b, comp) {
             } else if (isInterval(a) || isNote(a) || isInterval(b) || isNote(b)) throw "";
             else return comp(a, b);
         } catch (e) {
-            console.log(e);
             throw new TypeError(`Cannot compare the given values.
             ${givenVals(a, b)}`);
         }
@@ -683,30 +682,6 @@ xen.consistent = function(limit, edo) {
     }
     return true;
 }
-/* 
-xen.uniquely_consistent = function(limit, edo) {
-    let check = new Array(edo);
-    for (let a = 1; a <= limit - 4; a += 2) {
-        for (let b = a + 2; b <= limit - 2; b += 2) {
-            for (let c = b + 2; c <= limit; c += 2) {
-                let ratios = new List(
-                    xen.ratio(b, a),
-                    xen.ratio(c, b),
-                    xen.ratio(c, a));
-                ratios = xen.round( xen.et(ratios, edo) );
-                if (ratios[0].n + ratios[1].n != ratios[2].n) return false;
-
-                for (let r of ratios) {
-                    r.n = r.n % edo;
-                    if (!check[r.n]) check[r.n] = 1;
-                    else check[r.n]++;
-                }
-            }
-        }
-    } 
-    console.log(check);
-    return true;
-} */
 
 xen.smallest_consistent = function(limit) {
     if (limit >= 50) throw new RangeError(`This operation is too complex to be performed with the given value.
@@ -955,10 +930,10 @@ var lex = function(input) {
                 op += c;
                 if (twoCharOperators.includes(op)) {
                     addToken(op);
-                    console.log("added",op);
+                } else if (op == "//") { // comment
+                    while (advance() != "\n" && c != undefined) /* do nothing */;
                 } else {
                     addToken(op[0]), addToken(op[1]);
-                    console.log("added",op[0], op[1]);
                 }
                 advance();
             } else {
@@ -1243,7 +1218,6 @@ function addMacro(name, op) {
 addMacro("js", function(pre, block) {
     // only parse block, or pre as an expression if there is no block.
     block = block || ("return " + pre);
-    console.log(pre, block);
     let executeBlock;
     try {
         // pass in variables to put them in scope
@@ -1276,8 +1250,7 @@ addMacro("js", function(pre, block) {
     }
 });
 
-// @comment (@@) does nothing to the block
-addMacro("comment");
+// @ does nothing to the block
 addMacro("@");
 
 addMacro("scl", function(pre, content) {
@@ -1320,7 +1293,6 @@ addMacro("scl", function(pre, content) {
 addMacro("function", function(pre, content) {
         let preReg = /^(?<id>\w*)\((?<args>[\w\s,]*)\)$/;
         let match = pre.match(preReg);
-        console.log(pre.length);
         if (!match) throw new SyntaxError("Incorrect function syntax.");
         let fnName = match.groups.id;
         let argNames = match.groups.args.split(",").map(e => e.trim());

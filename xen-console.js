@@ -242,9 +242,16 @@ function evaluateXenExpr() {
     codeInput.scrollIntoView();
 }
 
-/* evaluate(`avg(x, y) = js {
+evaluate(`avg(x, y) = js {
     let sum = add(x, y);
     return divide(sum, 2);
 }`);
 
-evaluate(`a = js () => console.log("hi") `); */
+evaluate(`a = js () => console.log("hi") `);
+
+evaluate(`
+//I'm a comment!
+// I'm also a comment!
+
+// I'm far away/////! HEre;s some math 1+ 1. Just kidding, this won't run. it's below.
+-1 + 2`);
