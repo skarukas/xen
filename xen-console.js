@@ -1,4 +1,4 @@
-import xen from "./xen.js";
+/* import xen from "./xen-rollup.js"; */
 import playback from "./xen-webaudio-playback.js";
 const evaluate = xen.evaluate;
 
@@ -49,6 +49,7 @@ var editor = ace.edit("editor");
 editor.setTheme("ace/theme/chrome");
 editor.session.setMode("ace/mode/d");
 
+
 // dark mode
 $( ".dark-switch" ).on("click", function() {
     if( $( "body" ).hasClass( "dark-primary" )) {
@@ -70,8 +71,8 @@ $( ".dark-switch" ).on("click", function() {
     }
 });
 
-// cheat sheet shown by default
-let cheat = true;
+// cheat sheet hidden by default
+let cheat = false;
 $( ".cheat-toggle").on("click", function() {
     cheat = !cheat;
     if (cheat) {
@@ -242,16 +243,74 @@ function evaluateXenExpr() {
     codeInput.scrollIntoView();
 }
 
-evaluate(`avg(x, y) = js {
+editor.setValue(
+`// a bunch of ways to define a function
+avg(x, y) = js {
     let sum = add(x, y);
     return divide(sum, 2);
-}`);
+}
 
-evaluate(`a = js () => console.log("hi") `);
+avg(x, y) = (x + y) / 2
+
+function avg(x, y) {
+    sum = x + y;
+    sum / 2
+}
+
+avg = function (x, y) {
+    sum = x + y;
+    sum / 2
+}
+
+js {
+    avg = function(x, y) {
+
+    }
+}
+
+operator (a >> b) {
+    return a >> b;
+}
+
+operator (expr~) 1 {
+    play(expr);
+    return expr;
+}
+
+// defining JSnext pipe operator
+
+__functionsAsData = true
+
+operator (a |> b) { 
+    return b(a);
+}
+
+b = (5:4 
+    |> function(a) { a * 2 } 
+    |> cents 
+    |> function(a) { 400c - a });
+`);
+
+// run the code again -- BUT need new execution context / reset state 
+editor.session.on('change', function(delta) {
+    // delta.start, delta.end, delta.lines, delta.action
+});
+
+evaluate(
+`// defining JSnext pipe operator
+
+__functionsAsData = true;
+
+operator (a |> b) { 
+    return b(a);
+};`);
 
 evaluate(`
-//I'm a comment!
-// I'm also a comment!
+q = 5:4 |> cents;`);
 
-// I'm far away/////! HEre;s some math 1+ 1. Just kidding, this won't run. it's below.
--1 + 2`);
+evaluate(`
+b = (5:4
+    |> function(a) { a * 2 } 
+    |> cents 
+    |> function(a) { 400c - a });
+`);

@@ -10,7 +10,6 @@
  * Copyright 2020 Stephen Karuksa
  */
 
-import xen from "./xen.js";
 const evaluate = xen.evaluate;
 let numTests = 0;
 const examples = {};
@@ -520,7 +519,7 @@ const tests = {
     js() {
         
         xenTest(
-            `@js {
+            `js {
                 a = 440;
                 sum = function(li) {
                     let total = li[0];

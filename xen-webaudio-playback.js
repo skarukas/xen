@@ -1,5 +1,3 @@
-import xen from "./xen.js";
-
 // ==== WebAudio Master Objects ====
 let audioContext;
 let filterNode;
