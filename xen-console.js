@@ -309,8 +309,16 @@ evaluate(`
 q = 5:4 |> cents;`);
 
 evaluate(`
-b = (5:4
+b = 5:4
     |> function(a) { a * 2 } 
     |> cents 
-    |> function(a) { 400c - a });
+    |> function(a) { 400c - a };
 `);
+
+evaluate(`
+operator (n -> m) 9 { 
+    let result = []; 
+    while (n < m) result.push(n++); 
+    while (n > m) result.push(n--); 
+    return result; 
+}`);

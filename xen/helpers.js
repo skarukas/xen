@@ -6,6 +6,7 @@ const typeMap = {
     "Cents": "cents",
     "Frequency": "freq",
     "XenList": "list",
+    "Array": "list",
     "Symbol": "waveshape"
 }
 
