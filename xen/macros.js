@@ -200,3 +200,9 @@ macros.operator = function(pre, content) {
     else if (!b) addPostfixOperator(op, bp, fn, true);
     else         addInfixOperator(op, bp, fn, true);
 }
+
+macros.return = function(pre) {
+    let result = xen.xen_eval(pre);
+    xen.__return = result;
+    return result;
+}

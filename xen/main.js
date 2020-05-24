@@ -30,7 +30,7 @@ import evaluate from "./xen-evaluator";
 import "./operators";
 import "./macros";
 
-import { givenVals } from "./helpers";
+import { givenVals, displayType } from "./helpers";
 
 // make the object's properties immutable
 /* Object.freeze(xen); */
@@ -47,7 +47,14 @@ function calculate(input) {
 
 const external = {
     "evaluate": calculate, 
-    "playback": function(freqs) { throw "play() is not supported in this implementation."; }
+    "playback": function(freqs) { throw "play() is not supported in this implementation."; },
+    "print": function(freqs) { throw "print() is not supported in this implementation."; },
+}
+
+xen.print = (...args) => {
+    // convert to value/type pairs
+    args = args.map(value => ({value, type: displayType(value)}));
+    external.print(...args);
 }
 
 xen.xen_eval = (str) => {

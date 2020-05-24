@@ -229,7 +229,7 @@ function evaluateXenExpr() {
             let allResults = evaluate(inputExpr);
             // display all returned values
             for (let result of allResults) {
-                if (result) appendNewDiv("output", `${result.value} (${result.type})`);
+                if (result) printToConsole(result);
             }
         } catch (e) {
             appendNewDiv("error", e);
@@ -242,6 +242,11 @@ function evaluateXenExpr() {
     codeInput.value = "";
     codeInput.scrollIntoView();
 }
+
+function printToConsole(data) {
+    appendNewDiv("output", `${data.value} (${data.type})`);
+}
+xen.print = printToConsole;
 
 editor.setValue(
 `// a bunch of ways to define a function
@@ -285,10 +290,17 @@ operator (a |> b) {
     return b(a);
 }
 
-b = (5:4 
+b = 5:4 
     |> function(a) { a * 2 } 
     |> cents 
-    |> function(a) { 400c - a });
+    |> function(a) { 400c - a };
+
+operator (n -> m) 9 { 
+    let result = []; 
+    if (n < m) while (n <= m) result.push(n++); 
+    else while (n >= m) result.push(n--); 
+    return result; 
+}
 `);
 
 // run the code again -- BUT need new execution context / reset state 
@@ -303,14 +315,14 @@ __functionsAsData = true;
 
 operator (a |> b) { 
     return b(a);
-};`);
+}`);
 
 evaluate(`
 q = 5:4 |> cents;`);
 
 evaluate(`
 b = 5:4
-    |> function(a) { a * 2 } 
+    |> function(a) { return a * 2 } 
     |> cents 
     |> function(a) { 400c - a };
 `);
@@ -318,7 +330,7 @@ b = 5:4
 evaluate(`
 operator (n -> m) 9 { 
     let result = []; 
-    while (n < m) result.push(n++); 
-    while (n > m) result.push(n--); 
+    if (n < m) while (n <= m) result.push(n++); 
+    else while (n >= m) result.push(n--); 
     return result; 
 }`);

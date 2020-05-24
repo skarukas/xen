@@ -370,7 +370,7 @@ const tests = {
         xenTest(":19#19",  "2:1"); // :(19#19)
 
         // compound ratio shorthand
-        xenTest("4:5:6:7", "'(5:4,6:4,7:4)", "list");
+        xenTest("4:5:6:7", "'(4:4,5:4,6:4,7:4)", "list");
         xenTest("4:(5:6)", "error");
         
         // list mapping

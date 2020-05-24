@@ -88,6 +88,7 @@ export default function lex(input) {
                     advance();
                 }
                 pre = pre.trim();
+                pre = pre.replace(/;+$/, "");
                 block = block.trim();
 
                 addToken("macro", {macroId: idn, pre, block});

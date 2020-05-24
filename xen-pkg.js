@@ -368,7 +368,7 @@
     xen.__colon = function(a, b) {
         assertDefined(1, arguments);
         // creating compound ratios, e.g. 4:5:6:7:11
-        if (typeof b == 'number' && displayType(a) == 'ratio') return xen.list(a.inverse(), tune.FreqRatio(b, a.n));
+        if (typeof b == 'number' && displayType(a) == 'ratio') return xen.list(xen.ratio(a.n, a.n), a.inverse(), xen.ratio(b, a.n));
         if (typeof b == 'number' && displayType(a) == 'list' && displayType(a[0]) == 'ratio')  {
             let result = xen.list();
             // check that they're all ratios
@@ -1298,6 +1298,7 @@
     var args = {};
 
     function evaluate(parseTree) {
+        xen.__return = undefined;
 
         var parseNode = function(node) {
             if (node.type === "number") {
@@ -1348,7 +1349,8 @@
                 else return {value, type};
             }
         });
-        return output;
+        if (xen.__return != undefined) return [{value: xen.__return, type: displayType(xen.__return)}];
+        else return output;
     }
 
     // stores all available macros
@@ -1548,6 +1550,12 @@
         else         addInfixOperator(op, bp, fn, true);
     };
 
+    macros.return = function(pre) {
+        let result = xen.xen_eval(pre);
+        xen.__return = result;
+        return result;
+    };
+
     //  ********* LEXER *********
 
     function lex(input) {
@@ -1636,6 +1644,7 @@
                         advance();
                     }
                     pre = pre.trim();
+                    pre = pre.replace(/;+$/, "");
                     block = block.trim();
 
                     addToken("macro", {macroId: idn, pre, block});
@@ -1681,7 +1690,14 @@
     }
     const external = {
         "evaluate": calculate, 
-        "playback": function(freqs) { throw "play() is not supported in this implementation."; }
+        "playback": function(freqs) { throw "play() is not supported in this implementation."; },
+        "print": function(freqs) { throw "print() is not supported in this implementation."; },
+    };
+
+    xen.print = (...args) => {
+        // convert to value/type pairs
+        args = args.map(value => ({value, type: displayType(value)}));
+        external.print(...args);
     };
 
     xen.xen_eval = (str) => {

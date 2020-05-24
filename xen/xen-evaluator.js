@@ -7,6 +7,7 @@ import { displayType } from "./helpers";
 var args = {};
 
 export default function evaluate(parseTree) {
+    xen.__return = undefined;
 
     var parseNode = function(node) {
         if (node.type === "number") {
@@ -57,5 +58,6 @@ export default function evaluate(parseTree) {
             else return {value, type};
         }
     });
-    return output;
+    if (xen.__return != undefined) return [{value: xen.__return, type: displayType(xen.__return)}];
+    else return output;
 };

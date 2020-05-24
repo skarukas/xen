@@ -6,7 +6,7 @@ import xen from "../constants";
 xen.__colon = function(a, b) {
     assertDefined(1, arguments);
     // creating compound ratios, e.g. 4:5:6:7:11
-    if (typeof b == 'number' && displayType(a) == 'ratio') return xen.list(a.inverse(), tune.FreqRatio(b, a.n));
+    if (typeof b == 'number' && displayType(a) == 'ratio') return xen.list(xen.ratio(a.n, a.n), a.inverse(), xen.ratio(b, a.n));
     if (typeof b == 'number' && displayType(a) == 'list' && displayType(a[0]) == 'ratio')  {
         let result = xen.list();
         // check that they're all ratios
