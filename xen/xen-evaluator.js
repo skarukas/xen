@@ -21,24 +21,9 @@ export default function evaluate(parseTree) {
             let fn = operators[node.type];
             let left = parseNode(node.left);
             let right = parseNode(node.right);
-            
-            if (left == xen["..."]) {
-                // partially evaluated expression
-                result = function(_left) {
-                    return fn(_left, right);
-                }
-                result.toString = () => `... ${node.type} ${right || ""}`;
-            } else if (right == xen["..."]) {
-                // partially evaluated expression
-                result = function(_right) {
-                    return fn(left, _right);
-                }
-                result.toString = () => `${left || ""} ${node.type} ...`;
-            } else {
-                // fully evaluated expression
-                if (node.right && node.left) result = fn(left, right); // binary
-                else result = fn(right || left); // unary
-            }
+            let args = (node.right && node.left)? [left, right] : [left || right];
+
+            result = call(fn, args, "", node.type);
         } else if (node.type === "identifier") {
             var value = args.hasOwnProperty(node.value) ? args[node.value] : xen[node.value];
             if (typeof value === "undefined") throw node.value + " is undefined";
@@ -47,39 +32,12 @@ export default function evaluate(parseTree) {
         } else if (node.type === "assign") {
             xen[node.name] = parseNode(node.value);
         } else if (node.type === "call") {
-            let args = [];
-            let curried = false;
-            for (var i = 0; i < node.args.length; i++) {
-                args[i] = parseNode(node.args[i]);
-                if (args[i] == xen["..."]) curried = true;
-            }
+            let args = node.args.map(parseNode);
             let fn = xen[node.name];
             if (typeof fn === 'undefined') throw node.name + "() is undefined";
 
-            if (!curried) {
-                // fully evaluated function
-                result = fn(...args);
-            } else {
-                // partially evaluated function
-                result = partialFunction(fn, args);
+            result = call(fn, args, node.name);
 
-                function partialFunction(fn, args) {
-                    let argsCopy = args.slice(0);
-
-                    let f = function(...curriedArgs) {
-                        for (let i = 0, j = 0; i < argsCopy.length; i++) {
-                            if (argsCopy[i] == xen["..."]) {
-                                if (curriedArgs[j]) argsCopy[i] = curriedArgs[j++];
-                                else return partialFunction(fn, argsCopy);
-                            }
-                        }
-                        return fn(...argsCopy);
-                    }
-
-                    f.toString = () => `${node.name}(${args.map(e => (typeof e == 'symbol')? e.description : e)})`;
-                    return f;
-                }
-            }
         } else if (node.type === "function") {
             xen[node.name] = function() {
                 for (var i = 0; i < node.args.length; i++) {
@@ -113,3 +71,71 @@ export default function evaluate(parseTree) {
     if (xen.__return != undefined) return [{value: xen.__return, type: displayType(xen.__return)}];
     else return output;
 };
+
+
+
+function call(fn, args, fnName, operator) {
+    try {
+        return fn(...args);
+    } catch (e) {
+        //console.log("error!",e);
+        if (args.some(isPartiallyEvaluated)) {
+            return partialFunction(fn, args, fnName, operator)
+        } else {
+            throw e;
+        }
+    }
+}
+
+function partialFunction(fn, args, name = fn.name, operator) {
+    let argsCopy = args.slice(0);
+
+    let f = function(...curriedArgs) {
+        /* console.log(name, "called with", curriedArgs);
+        console.log("current argsCopy:", argsCopy); */
+        for (let i = 0, j = 0; i < argsCopy.length; i++) {
+            if (isPartiallyEvaluated(argsCopy[i]) && curriedArgs[j]) {
+                // replace holes
+                if (argsCopy[i] == xen["..."]) {
+                    //console.log("replacing", argsCopy[i], "with", curriedArgs[j]);
+                    argsCopy[i] = curriedArgs[j++];
+                    continue;
+                }
+                // while the function is unevaluated, fill its holes
+                while (argsCopy[i].partialArgs && curriedArgs[j]) {
+                    //console.log("filling in an arg:", argsCopy[i], "with", curriedArgs[j]);
+                    argsCopy[i] = argsCopy[i](curriedArgs[j++]);
+                }
+            }
+        }
+        return call(fn, argsCopy, name, operator)
+    }
+    // total all the number of ... in the given arguments
+    f.partialArgs = args.reduce((total, e) => numPartialArgs(e) + total, 0);
+    if (operator) {
+        f.toString = () => `(${displayPartial(args[0])} ${operator} ${displayPartial(args[1])})`;
+    } else {
+        f.toString = () => `${name}(${args.map(displayPartial)})`;
+    }
+    return f;
+}
+
+function isPartiallyEvaluated(expr) {
+/*     console.log("called iPE with", expr); */
+    if (expr) {
+        return expr == xen["..."] || !!expr.partialArgs;
+    } else {
+        return false;
+    }
+}
+
+function numPartialArgs(expr) {
+    if (expr == xen["..."]) return 1;
+    else if (expr) return expr.partialArgs || 0;
+    else return 0;
+}
+
+function displayPartial(expr) {
+/*     console.log("calling displayp") */
+    return (expr == xen["..."])? "..." : (expr || "");
+}
