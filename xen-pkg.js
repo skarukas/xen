@@ -1685,7 +1685,7 @@
                 addToken("number", num);
             } else if (isIdentifier(c)) {
                 var idn = c;
-                while (isIdentifier(advance())) idn += c;
+                while (isIdentifier(advance()) || isDigit(c)) idn += c;
 
                 // catch the reserved macros
                 if (idn in macros) {
