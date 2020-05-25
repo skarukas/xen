@@ -204,5 +204,11 @@ macros.operator = function(pre, content) {
 macros.return = function(pre) {
     let result = xen.xen_eval(pre);
     xen.__return = result;
+    xen.__break = true;
+    //console.log("breaking");
     return result;
+}
+
+macros.break = function() {
+    xen.__break = true;
 }

@@ -286,14 +286,14 @@ operator (expr~) 1 {
 
 __functionsAsData = true
 
-operator (a |> b) { 
+operator (a >> b) { 
     return b(a);
 }
 
-b = 5:4 
-    |> function(a) { a * 2 } 
-    |> cents 
-    |> function(a) { 400c - a };
+b = 5:4
+    >> (... * 2)
+    >> cents 
+    >> (400c - ...);
 
 operator (n -> m) 9 { 
     let result = []; 
@@ -313,18 +313,18 @@ evaluate(
 
 __functionsAsData = true;
 
-operator (a |> b) { 
+operator (a >> b) { 
     return b(a);
 }`);
 
 evaluate(`
-q = 5:4 |> cents;`);
+q = 5:4 >> cents;`);
 
 evaluate(`
 b = 5:4
-    |> function(a) { return a * 2 } 
-    |> cents 
-    |> function(a) { 400c - a };
+    >> (... * 2)
+    >> cents 
+    >> (400c - ...);
 `);
 
 evaluate(`
@@ -334,3 +334,21 @@ operator (n -> m) 9 {
     else while (n >= m) result.push(n--); 
     return result; 
 }`);
+
+evaluate(`
+function a(x) { 
+    return 0
+    return a(x-1)
+}`)
+
+evaluate(`
+function g(x) {
+    45;
+    function q(y) {
+        return y + 5;
+    };
+    return;
+    return q(x);
+    return q(x + 4);
+}
+`)

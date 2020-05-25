@@ -1,4 +1,4 @@
-import { assertDefined, givenVals, displayType, isInterval } from "../helpers";
+import { assertDefined, givenVals, displayType, isInterval, isNote } from "../helpers";
 import { mapList, elementWise } from "../list-helpers";
 import xen from "../constants";
 
@@ -191,8 +191,11 @@ function abstractCompare(a, b, comp) {
         try {
             if (isInterval(a) && isInterval(b) || isNote(a) && isNote(b)) {
                 return comp(xen.number(xen.cents(a)), xen.number(xen.cents(b)));
-            } else if (isInterval(a) || isNote(a) || isInterval(b) || isNote(b)) throw "";
-            else return comp(a, b);
+            } else if (isInterval(a) || isNote(a) || isInterval(b) || isNote(b)) {
+                throw "";
+            } else {
+                return comp(a, b);
+            }
         } catch (e) {
             throw new TypeError(`Cannot compare the given values.
             ${givenVals(a, b)}`);
@@ -214,7 +217,13 @@ xen.lessThan = function(a, b) {
 }
 
 xen.equal = function(a, b) {
-    return abstractCompare(a, b, (a, b) => a == b);
+    // if error is thrown, determine not equal
+    try {
+        let result = abstractCompare(a, b, (a, b) => a == b);
+        return result;
+    } catch (e) {
+        return false;
+    }
 }
 
 xen.random = function(n) {

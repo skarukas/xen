@@ -7,7 +7,8 @@ const typeMap = {
     "Frequency": "freq",
     "XenList": "list",
     "Array": "list",
-    "Symbol": "waveshape"
+    "Symbol": "waveshape",
+    "Function": "function"
 }
 
 export function isInterval(a) {
@@ -24,7 +25,7 @@ export function isNote(a) {
  * Determine how to display type names
  */
 export function displayType(data) {
-    return (data == undefined)? "undefined" : (typeMap[data.constructor.name] || "javascript " + data.constructor.name.toLowerCase());
+    return (data == undefined)? "undefined" : (typeMap[data.constructor.name] || "js." + data.constructor.name);
 }
 
 /**

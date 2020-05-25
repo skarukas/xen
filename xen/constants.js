@@ -11,6 +11,7 @@ var waves = {
  * Public xen language variables and functions
  */
 const xen = {
+    "...": Symbol("..."),
     __functionsAsData: false,
     ans: undefined,
     true: true,
