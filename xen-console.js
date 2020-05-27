@@ -39,8 +39,10 @@ ratios for a given et interval.
 see https://github.com/skarukas/xen/wiki for full documentation.
 
 useful commands:
- - clear    clear the console
- - ans      a variable storing the previous answer
+ - clear            clear the console
+ - ans              a variable storing the previous answer
+ - help *query*     search the wiki for info on "query" (e.g. 'help add' will search for 'add')
+ - wiki *query*     same as 'help name'
 `;
 /* $('#code-container').hide("slide");
 $('#code-container').height(0); */
@@ -57,6 +59,7 @@ $( ".dark-switch" ).on("click", function() {
       $( "#codeInput" ).removeClass( "dark-primary" );
       $( ".interactions" ).removeClass( "dark-primary" );
       $( ".cheat-sheet" ).removeClass( "dark-secondary" );
+      $( "footer" ).removeClass( "dark-secondary" );
       $( ".dark-switch" ).text( "dark mode is off" );
       
       editor.setTheme("ace/theme/chrome");
@@ -65,6 +68,7 @@ $( ".dark-switch" ).on("click", function() {
       $( "#codeInput" ).addClass( "dark-primary" );
       $( ".interactions" ).addClass( "dark-primary" );
       $( ".cheat-sheet" ).addClass( "dark-secondary" );
+      $( "footer" ).addClass( "dark-secondary" );
       $( ".dark-switch" ).text( "dark mode is on" );
 
       editor.setTheme("ace/theme/kr_theme");
@@ -248,15 +252,22 @@ function printToConsole(data) {
 }
 xen.print = printToConsole;
 
-editor.setValue(
-`// a bunch of ways to define a function
+/* editor.setValue(
+`// This section is for definitions (operators, macros, functions)
+//   and is written in the xen language, with the exception of the
+//   embedded JavaScript used for certain macros
+
+
+// a bunch of ways to define a function
 avg(x, y) = js {
     let sum = add(x, y);
     return divide(sum, 2);
 }
 
+// inline function
 avg(x, y) = (x + y) / 2
 
+// function with implicit return ()
 function avg(x, y) {
     sum = x + y;
     sum / 2
@@ -267,41 +278,60 @@ avg = function (x, y) {
     sum / 2
 }
 
+// This function is defined within a block of JS code.
+// Because 'avg' is not declared with let or const,
+//    it becomes available in the global xen scope. 
+//    N.B. though this seems contrary to JS 
+//    best practices, this does not have negative side effects
+//    in the context of xen code, as each JS block is executed
+//    within its own scope.
 js {
     avg = function(x, y) {
-
+        let sum = x + y;
+        return sum / 2;
     }
 }
 
-operator (a >> b) {
-    return a >> b;
-}
+// Operators are defined by first presenting a template of the operation 
+//    (and optionally a number representing its binding power)
+//    and then a block of JavaScript code that defines the behavior
+//    of the operator.
 
+// defining a shorthand to play back the previous musical expression
+//  (e.g. 5:4~)
 operator (expr~) 1 {
     play(expr);
     return expr;
 }
 
-// defining JSnext pipe operator
-
-__functionsAsData = true
-
-operator (a >> b) { 
-    return b(a);
-}
-
-b = 5:4
-    >> (... * 2)
-    >> cents 
-    >> (400c - ...);
-
+// defining an operator that returns a list of numbers in a certain range
+// (e.g. 1->9 evaluates to 1, 2, 3, 4, 5, 6, 7, 8, 9)
 operator (n -> m) 9 { 
     let result = []; 
     if (n < m) while (n <= m) result.push(n++); 
     else while (n >= m) result.push(n--); 
     return result; 
 }
-`);
+
+__functionsAsData = true
+
+// defining a "pipe" operator that allows 
+//     functions to be easily chained
+operator (a >> b) { 
+    return b(a);
+}
+
+
+// pipe operator in use.
+// notice also the partially evaluated expressions (using ellipses).
+//    this syntax defines an anonymous function that is immediately called
+//    with its input.
+b = 5:4
+    >> (... * 2)
+    >> cents 
+    >> (400c - ...);
+
+`); */
 
 // run the code again -- BUT need new execution context / reset state 
 editor.session.on('change', function(delta) {
@@ -352,3 +382,17 @@ function g(x) {
     return q(x + 4);
 }
 `)
+
+// searches the wiki for the given phrase
+evaluate(`
+macro help {
+    let url = \`https://github.com/skarukas/xen/search?q=\${encodeURIComponent(pre)}&type=Wikis\`;
+    window.open(url, "_blank");
+}`);
+
+// clone of help
+evaluate(`
+macro wiki {
+    let url = \`https://github.com/skarukas/xen/search?q=\${encodeURIComponent(pre)}&type=Wikis\`;
+    window.open(url, "_blank");
+}`);

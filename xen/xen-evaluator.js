@@ -21,7 +21,7 @@ export default function evaluate(parseTree) {
             let fn = operators[node.type];
             let left = parseNode(node.left);
             let right = parseNode(node.right);
-            let args = (node.right && node.left)? [left, right] : [left || right];
+            let args = (node.right && node.left)? [left, right] : [(left != undefined) ? left : right];
 
             result = call(fn, args, "", node.type);
         } else if (node.type === "identifier") {
@@ -88,10 +88,10 @@ function call(fn, args, fnName, operator) {
 }
 
 function partialFunction(fn, args, name = fn.name, operator) {
-    let argsCopy = args.slice(0);
 
     let f = function(...curriedArgs) {
-        /* console.log(name, "called with", curriedArgs);
+        let argsCopy = args.slice(0);
+/*         console.log(name, "called with", curriedArgs);
         console.log("current argsCopy:", argsCopy); */
         for (let i = 0, j = 0; i < argsCopy.length; i++) {
             if (isPartiallyEvaluated(argsCopy[i]) && curriedArgs[j]) {
@@ -102,9 +102,12 @@ function partialFunction(fn, args, name = fn.name, operator) {
                     continue;
                 }
                 // while the function is unevaluated, fill its holes
-                while (argsCopy[i].partialArgs && curriedArgs[j]) {
-                    //console.log("filling in an arg:", argsCopy[i], "with", curriedArgs[j]);
-                    argsCopy[i] = argsCopy[i](curriedArgs[j++]);
+                if (argsCopy[i].partialArgs && curriedArgs[j]) {
+                    let n = argsCopy[i].partialArgs;
+                    let innerArgs = curriedArgs.slice(j, j + n);
+                    //console.log("inner args", innerArgs);
+                    argsCopy[i] = argsCopy[i](...innerArgs);
+                    j += n;
                 }
             }
         }
@@ -117,6 +120,7 @@ function partialFunction(fn, args, name = fn.name, operator) {
     } else {
         f.toString = () => `${name}(${args.map(displayPartial)})`;
     }
+    /* console.log(f, f.partialArgs); */
     return f;
 }
 

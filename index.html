@@ -32,10 +32,98 @@
                     <div>&gt; <input type="text" id="codeInput" size="20" spellcheck="false" class="primary"/></div> -->
                     <!--<label for="definitions"></label>
                     <textarea name="definitions" id="definitions" spellcheck="false"></textarea>-->
-                    <div id="editor">function foo(items) {
-    var x = "All this is syntax highlighted";
-    return x;
+                    <div id="editor">
+// This section is for definitions (operators, macros, functions)
+//   and is written in the xen language, with the exception of the
+//   embedded JavaScript used for certain macros
+
+// Note: the definitions area is currently in development
+//    and is not run as code in this implementation
+
+
+// a bunch of ways to define a function
+avg(x, y) = js {
+    let sum = add(x, y);
+    return divide(sum, 2);
 }
+
+// inline function
+avg(x, y) = (x + y) / 2
+
+// function with implicit return ()
+function avg(x, y) {
+    sum = x + y;
+    sum / 2
+}
+
+avg = function (x, y) {
+    sum = x + y;
+    sum / 2
+}
+
+// This function is defined within a block of JS code.
+// Because 'avg' is not declared with let or const,
+//    it becomes available in the global xen scope. 
+//    N.B. though this seems contrary to JS 
+//    best practices, this does not have negative side effects
+//    in the context of xen code, as each JS block is executed
+//    within its own scope.
+js {
+    avg = function(x, y) {
+        let sum = x + y;
+        return sum / 2;
+    }
+}
+
+// Operators are defined by first presenting a template of the operation 
+//    (and optionally a number representing its binding power)
+//    and then a block of JavaScript code that defines the behavior
+//    of the operator.
+
+// defining a shorthand to play back the previous musical expression
+//  (e.g. 5:4~)
+operator (expr~) 1 {
+    play(expr);
+    return expr;
+}
+
+// defining an operator that returns a list of numbers in a certain range
+// (e.g. 1->9 evaluates to 1, 2, 3, 4, 5, 6, 7, 8, 9)
+operator (n -> m) 9 { 
+    let result = []; 
+    if (n < m) while (n <= m) result.push(n++); 
+    else while (n >= m) result.push(n--); 
+    return result; 
+}
+
+
+__functionsAsData = true
+
+// defining a "pipe" operator that allows 
+//     functions to be easily chained
+operator (a >> b) { 
+    return b(a);
+}
+
+
+// pipe operator in use.
+// this also uses xen's partially evaluated expressions (expressions with ellipses).
+//    this syntax defines an anonymous function that is immediately called
+//    with the piped-in input.
+b = 5:4
+    >> (... * 2)     // multiply input by 2
+    >> cents         // call cents() function on input
+    >> (400c - ...); // subtract input from 400 cents
+                    
+
+// more complex expressions are possible, and can be 
+//    partially evaluated (with arguments filled left to right) 
+//    until complete
+step1 = (... + ...) / (... + ...)
+
+step2 = step1(3, 4)     // 7 / (... + ...)
+step3 = step2(1)        // 7 / (1 + ...)
+finalResult = step3(13) // 0.5
                     </div>
                 </div>
                 <div class="cheat-sheet secondary">
@@ -137,6 +225,6 @@
         <script src="xen-pkg.js"></script>
         <script src="xen-webaudio-playback.js" type="module"></script>
         <script src="xen-console.js" type="module"></script>
-        <!-- <script src="xen.test.js" type="module"></script> <!--only uncomment for testing -->
+        <script src="xen.test.js" type="module"></script> <!--only uncomment for testing
     </body>
 </html>

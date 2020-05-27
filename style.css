@@ -214,5 +214,8 @@ button:hover {
 }
 
 footer {
+    -webkit-transition: color 1s linear, background-color 1s linear;
+    -moz-transition: color 1s linear, background-color 1s linear;
+    transition: color 1s linear, background-color 1s linear;
     padding: 2px;
 }

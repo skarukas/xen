@@ -13,6 +13,7 @@
  * TODO: 
  * - fix line break and semicolon seperate statements. 
  *    bottom of xen-console code should be able to be executed all in one go
+ * - play(...) interprets the symbol as an unrecognized waveshape
  */
 
 
@@ -65,5 +66,9 @@ xen.xen_eval = (str) => {
 
 // allow JS code to reference and modify the variables object itself
 xen.xen_variables = xen;
+
+for (let key in xen) {
+    if (xen[key] instanceof Function) xen[key].toString = () => key;
+}
 
 export default external;

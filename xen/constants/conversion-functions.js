@@ -121,6 +121,11 @@ xen.number = mapList(function(a) {
 });
 
 xen.list = function(...args) {
+    for (let arg of args) {
+        if (arg == xen["..."]) throw "";
+        if (arg instanceof Function) throw `TypeError: Cannot create a list of functions.
+        ${givenVals(...args)}`;
+    }
     return new XenList(...args);
 }
 
