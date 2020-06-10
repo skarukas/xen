@@ -52,12 +52,10 @@ export function typeCheck(fn, ...types) {
 }
 
 export function assertDefined(numArgs, argues) {
-    let args = Array.from(argues);
-    for (let i = 0; i < numArgs; i++) {
-        if (typeof args[i] == 'undefined') {
-            throw `Expected ${numArgs} argument(s).
-            ${givenVals(...args)}`;
-        }
+    let definedArgs = Array.from(argues).filter((e) => e != undefined);
+    if (definedArgs.length < numArgs) {
+        throw `Expected ${numArgs} argument(s).
+        ${givenVals(...definedArgs)}`;
     }
 }
 

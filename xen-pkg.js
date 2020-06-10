@@ -89,12 +89,10 @@
     }
 
     function assertDefined(numArgs, argues) {
-        let args = Array.from(argues);
-        for (let i = 0; i < numArgs; i++) {
-            if (typeof args[i] == 'undefined') {
-                throw `Expected ${numArgs} argument(s).
-            ${givenVals(...args)}`;
-            }
+        let definedArgs = Array.from(argues).filter((e) => e != undefined);
+        if (definedArgs.length < numArgs) {
+            throw `Expected ${numArgs} argument(s).
+        ${givenVals(...definedArgs)}`;
         }
     }
 
@@ -396,6 +394,8 @@
 
     xen.ratio = elementWise(mapList(function(a, b) {
         assertDefined(1, arguments);
+        if (a == undefined) a = b, b = undefined; // unary
+
         try {
             if (typeof b == 'number' && typeof a != 'number') throw "";
             switch (displayType(a)) {
@@ -414,7 +414,8 @@
 
     xen.et = elementWise(mapList(function(a, b, c) {
         assertDefined(1, arguments);
-        
+        if (a == undefined) a = b, b = undefined; // unary
+
         try {
 
             // If third argument (octave size) is specified, scale b
@@ -437,8 +438,9 @@
         }
     }));
 
-    xen.cents = mapList(function(a) {
+    xen.cents = mapList(function(a, _a) {
         assertDefined(1, arguments);
+        if (a == undefined) a = _a, _a = undefined; // unary
 
         try {
             switch (displayType(a)) {
@@ -455,8 +457,9 @@
         }
     });
 
-    xen.freq = mapList(function(a) {
+    xen.freq = mapList(function(a, _a) {
         assertDefined(1, arguments);
+        if (a == undefined) a = _a, _a = undefined; // unary
 
         try {
             switch (displayType(a)) {
@@ -545,7 +548,7 @@
         assertDefined(1, arguments);
 
         try {
-            if (b == undefined) return xen.number(a);
+            if (a == undefined) return xen.number(b);
 
             if (typeof a == "number" && typeof b == "number") return a + b;
             if (displayType(b) == "freq"  && isInterval(a)) return b.noteAbove(a);
@@ -581,7 +584,7 @@
 
     xen.subtract = elementWise(mapList(function(a, b) {
         assertDefined(1, arguments);
-        if (b == undefined) return xen.inverse(a);
+        if (a == undefined) return xen.inverse(b);
         if (displayType(a) == "freq" && displayType(b) == "freq") return tune.Frequency(a.freq - b.freq);
         return xen.add(a, xen.inverse(b));
     }));
@@ -770,6 +773,13 @@
         while (n-- > 0) result.push(Math.random());
         return result;
     };
+
+    xen.and = (a, b) => a && b;
+    xen.or = (a, b) => a || b;
+    xen.not = (_, a) => !a;
+    xen.notEqual = (a, b) => !xen.equal(a, b);
+    xen.greaterThanOrEqual = (a, b) => xen.greaterThan(a, b) || xen.equal(a, b);
+    xen.lessThanOrEqual = (a, b) => xen.lessThan(a, b) || xen.equal(a, b);
 
     xen.play = function(...args) {
         let C = tune.Frequency(261.63); // default to middle C
@@ -1294,7 +1304,7 @@
     //unary operators
     addPrefixOperator("-", 6.5, xen.subtract);
     addPrefixOperator("+", 6.5, xen.add);
-    addPrefixOperator("!", 6.5, (a) => !a);
+    addPrefixOperator("!", 6.5, xen.not);
     // postfix
     addPostfixOperator("c", 6.8, xen.cents);
     addPostfixOperator("hz", 6.8, xen.freq);
@@ -1308,13 +1318,15 @@
 
     addInfixOperator(">", 2.80, xen.greaterThan);
     addInfixOperator("<", 2.80, xen.lessThan);
-    addInfixOperator(">=", 2.80, (a, b) => xen.greaterThan(a, b) || xen.equal(a, b));
-    addInfixOperator("<=", 2.80, (a, b) => xen.lessThan(a, b) || xen.equal(a, b));
+    addInfixOperator(">=", 2.80, xen.greaterThanOrEqual);
+
+    addInfixOperator("<=", 2.80, xen.lessThanOrEqual);
 
     addInfixOperator("==", 2.70, xen.equal);
-    addInfixOperator("!=", 2.70, (a, b) => !xen.equal(a, b));
-    addInfixOperator("&&", 2.65, (a, b) => a && b);
-    addInfixOperator("||", 2.60, (a, b) => a || b);
+    addInfixOperator("!=", 2.70, xen.notEqual);
+
+    addInfixOperator("&&", 2.65, xen.and);
+    addInfixOperator("||", 2.60, xen.or);
 
     addPostfixOperator(";", 0.5, xen.__null);
 
@@ -1337,7 +1349,8 @@
                 let fn = operators[node.type];
                 let left = parseNode(node.left);
                 let right = parseNode(node.right);
-                let args = (node.right && node.left)? [left, right] : [(left != undefined) ? left : right];
+                let args = [left, right];
+                //let args = (node.right && node.left)? [left, right] : [(left != undefined) ? left : right];
 
                 result = call(fn, args, "", node.type);
             } else if (node.type === "identifier") {
@@ -1412,7 +1425,7 @@
                 if (argsCopy[i] == xen["..."]) {
                     // fill the hole directly
                     argsCopy[i] = givenArgs[j++];
-                } else if (argsCopy[i].partialArgs) {
+                } else if (argsCopy[i] && argsCopy[i].partialArgs) {
                     // fill the function's holes as much as possible
                     let n = argsCopy[i].partialArgs;
                     let innerArgs = givenArgs.slice(j, j + n);
@@ -1425,7 +1438,16 @@
         // total all the number of ... in the given arguments
         f.partialArgs = args.reduce((total, e) => numPartialArgs(e) + total, 0);
         if (operator) {
-            f.toString = () => `(${displayPartial(args[0])} ${operator} ${displayPartial(args[1])})`;
+            let displayString;
+
+            if (args[0] == undefined) {
+                displayString = `(${operator}${displayPartial(args[1])})`;
+            } else if (args[1] == undefined) {
+                displayString = `(${displayPartial(args[0])} ${operator})`;
+            } else {
+                displayString = `(${displayPartial(args[0])} ${operator} ${displayPartial(args[1])})`;
+            }
+            f.toString = () => displayString;
         } else {
             f.toString = () => `${name}(${args.map(displayPartial)})`;
         }

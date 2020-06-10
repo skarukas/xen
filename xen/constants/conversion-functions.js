@@ -23,6 +23,8 @@ xen.__colon = function(a, b) {
 
 xen.ratio = elementWise(mapList(function(a, b) {
     assertDefined(1, arguments);
+    if (a == undefined) a = b, b = undefined; // unary
+
     try {
         if (typeof b == 'number' && typeof a != 'number') throw "";
         switch (displayType(a)) {
@@ -41,7 +43,8 @@ xen.ratio = elementWise(mapList(function(a, b) {
 
 xen.et = elementWise(mapList(function(a, b, c) {
     assertDefined(1, arguments);
-    
+    if (a == undefined) a = b, b = undefined; // unary
+
     try {
 
         // If third argument (octave size) is specified, scale b
@@ -64,8 +67,9 @@ xen.et = elementWise(mapList(function(a, b, c) {
     }
 }));
 
-xen.cents = mapList(function(a) {
+xen.cents = mapList(function(a, _a) {
     assertDefined(1, arguments);
+    if (a == undefined) a = _a, _a = undefined; // unary
 
     try {
         switch (displayType(a)) {
@@ -82,8 +86,9 @@ xen.cents = mapList(function(a) {
     }
 });
 
-xen.freq = mapList(function(a) {
+xen.freq = mapList(function(a, _a) {
     assertDefined(1, arguments);
+    if (a == undefined) a = _a, _a = undefined; // unary
 
     try {
         switch (displayType(a)) {

@@ -6,7 +6,7 @@ xen.add = elementWise(mapList(function(a, b) {
     assertDefined(1, arguments);
 
     try {
-        if (b == undefined) return xen.number(a);
+        if (a == undefined) return xen.number(b);
 
         if (typeof a == "number" && typeof b == "number") return a + b;
         if (displayType(b) == "freq"  && isInterval(a)) return b.noteAbove(a);
@@ -42,7 +42,7 @@ xen.inverse = mapList(function(a) {
 
 xen.subtract = elementWise(mapList(function(a, b) {
     assertDefined(1, arguments);
-    if (b == undefined) return xen.inverse(a);
+    if (a == undefined) return xen.inverse(b);
     if (displayType(a) == "freq" && displayType(b) == "freq") return tune.Frequency(a.freq - b.freq);
     return xen.add(a, xen.inverse(b));
 }));
@@ -232,3 +232,10 @@ xen.random = function(n) {
     while (n-- > 0) result.push(Math.random());
     return result;
 }
+
+xen.and = (a, b) => a && b
+xen.or = (a, b) => a || b
+xen.not = (_, a) => !a;
+xen.notEqual = (a, b) => !xen.equal(a, b);
+xen.greaterThanOrEqual = (a, b) => xen.greaterThan(a, b) || xen.equal(a, b)
+xen.lessThanOrEqual = (a, b) => xen.lessThan(a, b) || xen.equal(a, b)

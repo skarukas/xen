@@ -70,7 +70,7 @@ addPrefixOperator(":", 7,  xen.__colon);
 //unary operators
 addPrefixOperator("-", 6.5, xen.subtract);
 addPrefixOperator("+", 6.5, xen.add);
-addPrefixOperator("!", 6.5, (a) => !a);
+addPrefixOperator("!", 6.5, xen.not);
 // postfix
 addPostfixOperator("c", 6.8, xen.cents);
 addPostfixOperator("hz", 6.8, xen.freq);
@@ -84,12 +84,14 @@ addInfixOperator("-", 3, xen.subtract);
 
 addInfixOperator(">", 2.80, xen.greaterThan);
 addInfixOperator("<", 2.80, xen.lessThan);
-addInfixOperator(">=", 2.80, (a, b) => xen.greaterThan(a, b) || xen.equal(a, b));
-addInfixOperator("<=", 2.80, (a, b) => xen.lessThan(a, b) || xen.equal(a, b));
+addInfixOperator(">=", 2.80, xen.greaterThanOrEqual);
+
+addInfixOperator("<=", 2.80, xen.lessThanOrEqual);
 
 addInfixOperator("==", 2.70, xen.equal);
-addInfixOperator("!=", 2.70, (a, b) => !xen.equal(a, b));
-addInfixOperator("&&", 2.65, (a, b) => a && b);
-addInfixOperator("||", 2.60, (a, b) => a || b);
+addInfixOperator("!=", 2.70, xen.notEqual);
+
+addInfixOperator("&&", 2.65, xen.and);
+addInfixOperator("||", 2.60, xen.or);
 
 addPostfixOperator(";", 0.5, xen.__null);

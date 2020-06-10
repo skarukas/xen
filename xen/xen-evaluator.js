@@ -21,7 +21,8 @@ export default function evaluate(parseTree) {
             let fn = operators[node.type];
             let left = parseNode(node.left);
             let right = parseNode(node.right);
-            let args = (node.right && node.left)? [left, right] : [(left != undefined) ? left : right];
+            let args = [left, right];
+            //let args = (node.right && node.left)? [left, right] : [(left != undefined) ? left : right];
 
             result = call(fn, args, "", node.type);
         } else if (node.type === "identifier") {
@@ -97,7 +98,7 @@ function partialFunction(fn, args, name = fn.name, operator) {
             if (argsCopy[i] == xen["..."]) {
                 // fill the hole directly
                 argsCopy[i] = givenArgs[j++];
-            } else if (argsCopy[i].partialArgs) {
+            } else if (argsCopy[i] && argsCopy[i].partialArgs) {
                 // fill the function's holes as much as possible
                 let n = argsCopy[i].partialArgs;
                 let innerArgs = givenArgs.slice(j, j + n);
@@ -110,7 +111,16 @@ function partialFunction(fn, args, name = fn.name, operator) {
     // total all the number of ... in the given arguments
     f.partialArgs = args.reduce((total, e) => numPartialArgs(e) + total, 0);
     if (operator) {
-        f.toString = () => `(${displayPartial(args[0])} ${operator} ${displayPartial(args[1])})`;
+        let displayString;
+
+        if (args[0] == undefined) {
+            displayString = `(${operator}${displayPartial(args[1])})`;
+        } else if (args[1] == undefined) {
+            displayString = `(${displayPartial(args[0])} ${operator})`;
+        } else {
+            displayString = `(${displayPartial(args[0])} ${operator} ${displayPartial(args[1])})`;
+        }
+        f.toString = () => displayString;
     } else {
         f.toString = () => `${name}(${args.map(displayPartial)})`;
     }
