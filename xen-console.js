@@ -396,3 +396,21 @@ macro wiki {
     let url = \`https://github.com/skarukas/xen/search?q=\${encodeURIComponent(pre)}&type=Wikis\`;
     window.open(url, "_blank");
 }`);
+
+evaluate(`
+macro for {
+    /* no need for parens bb */
+    if (pre[0] == "(" && pre[pre.length-1] == ")") pre = pre.substring(1, pre.length-1);
+    let [varName, op, ...xenCode] = pre.split(" ");
+    let iterable = xen_eval(xenCode.join(" "));
+    
+    let temp = xen_variables[varName];
+    for (let i = 0; i < iterable.length; i++) {
+        /* pass by reference */
+        xen_variables[varName] = iterable[i];
+        xen_eval(content);
+        iterable[i] = xen_variables[varName];
+    }
+    
+    xen_variables[varName] = temp;
+}`);

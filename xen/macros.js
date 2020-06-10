@@ -117,7 +117,7 @@ macros.function = function(pre, content) {
 // macro defines a new type of block 
 //     M E T A
 macros.macro = function(name, blockDefinition) {
-    if (!name) throw new SyntaxError(`Block definitions must be given a name.`);
+    //if (!name) throw new SyntaxError(`Block definitions must be given a name.`);
     let generateBlockFn;
     try {
         generateBlockFn = new Function("xen", "args",

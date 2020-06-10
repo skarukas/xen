@@ -1,3 +1,5 @@
+import xen from "./constants";
+
 const typeMap = {
     "Number": "number",
     "Boolean": "bool",
@@ -25,7 +27,11 @@ export function isNote(a) {
  * Determine how to display type names
  */
 export function displayType(data) {
-    return (data == undefined)? "undefined" : (typeMap[data.constructor.name] || "js." + data.constructor.name);
+    if (data == undefined) return "undefined";
+    if (data.partialArgs) return "partial function";
+    if (data == xen["..."]) return "hole";
+
+    return (typeMap[data.constructor.name] || "js." + data.constructor.name);
 }
 
 /**

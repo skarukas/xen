@@ -68,7 +68,10 @@ xen.xen_eval = (str) => {
 xen.xen_variables = xen;
 
 for (let key in xen) {
-    if (xen[key] instanceof Function) xen[key].toString = () => key;
+    if (xen[key] instanceof Function) {
+        xen[key].toString = () => key;
+        xen[key].__refuseFunctionalInput = true;
+    }
 }
 
 export default external;
