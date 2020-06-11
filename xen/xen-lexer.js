@@ -4,7 +4,7 @@ import macros from "./macros";
 
 export default function lex(input) {
     var isOperator = function(c) {
-            return /[+\-*\/\^%=(),:;\<>&|!#~]/.test(c);
+            return /[+\-*\/\^%=(),:;\<>&|\[\]!#~]/.test(c);
         },
         isDigit = function(c) {
             return /[0-9]/.test(c);

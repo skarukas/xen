@@ -1,4 +1,6 @@
-/* import macros from "./xen-macros"; */
+/**
+ * All these are constants which cannot be changed
+ */
 
 var waves = {
     saw: Symbol("sawtooth"),
@@ -12,8 +14,6 @@ var waves = {
  */
 const xen = {
     "...": Symbol("..."),
-    __functionsAsData: false,
-    ans: undefined,
     true: true,
     false: false,
     pi: Math.PI,

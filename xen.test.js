@@ -101,13 +101,13 @@ const tests = {
         xenTest("+100hz",   "100",    "number");
 
         // list mapping
-        xenTest("4+'(1, 2, 3)", "'(5,6,7)", "list");
-        xenTest("'(1, 2, 3)+4", "'(5,6,7)", "list");
-        xenTest("+'(1hz, 2c, 3#12)", "'(1,2,3)", "list");
+        xenTest("4+[1, 2, 3]", "[5,6,7]", "list");
+        xenTest("[1, 2, 3]+4", "[5,6,7]", "list");
+        xenTest("+[1hz, 2c, 3#12]", "[1,2,3]", "list");
 
         // elementwise list operation
-        xenTest("'(1, 2, 3) + '(2, 4, 6)", "'(3,6,9)", "list");
-        xenTest("'(1, 2, 3) + '(2, 4)", "error");
+        xenTest("[1, 2, 3] + [2, 4, 6]", "[3,6,9]", "list");
+        xenTest("[1, 2, 3] + [2, 4]", "error");
     },
     subtract() {
         // binary
@@ -145,13 +145,13 @@ const tests = {
         xenTest("-100hz",   "error");
 
         // list mapping
-        xenTest("4-'(1, 2, 3)", "'(3,2,1)", "list");
-        xenTest("'(1, 2, 3)-4", "'(-3,-2,-1)", "list");
-        xenTest("-'(5:4, 2c, 3#12)", "'(4:5,-2c,-3#12)", "list");
+        xenTest("4-[1, 2, 3]", "[3,2,1]", "list");
+        xenTest("[1, 2, 3]-4", "[-3,-2,-1]", "list");
+        xenTest("-[5:4, 2c, 3#12]", "[4:5,-2c,-3#12]", "list");
 
         // elementwise list operation
-        xenTest("'(2, 4, 6) - '(1, 2, 3)", "'(1,2,3)", "list");
-        xenTest("'(1, 2, 3) - '(2, 4)", "error");
+        xenTest("[2, 4, 6] - [1, 2, 3]", "[1,2,3]", "list");
+        xenTest("[1, 2, 3] - [2, 4]", "error");
     },
     number() {
         // unary
@@ -164,7 +164,7 @@ const tests = {
         xenTest("number(100hz)",   "100",    "number");
 
         // list mapping
-        xenTest("number('(1hz, 5:4, 3#12,100c))", "'(1,1.25,3,100)", "list");
+        xenTest("number([1hz, 5:4, 3#12,100c])", "[1,1.25,3,100]", "list");
     },
     inverse() {
         // unary
@@ -176,7 +176,7 @@ const tests = {
         xenTest("inverse(115c)",    "-115c",  "cents");
 
         xenTest("inverse(100hz)",   "error").addExample("inverse","no negative frequencies allowed");
-        xenTest("inverse('(5:4, 2c, 3#12))", "'(4:5,-2c,-3#12)", "list");
+        xenTest("inverse([5:4, 2c, 3#12])", "[4:5,-2c,-3#12]", "list");
     },
     multiply() {
         xenTest("2#12*19#19", "error").addExample("multiply","cannot multiply two xen objects together");
@@ -212,12 +212,12 @@ const tests = {
         xenTest("4*400c",    "1600c","cents");
 
         // list mapping
-        xenTest("4*'(1, 2, 3)", "'(4,8,12)", "list");
-        xenTest("'(1, 2, 3)*4", "'(4,8,12)", "list");
+        xenTest("4*[1, 2, 3]", "[4,8,12]", "list");
+        xenTest("[1, 2, 3]*4", "[4,8,12]", "list");
 
         // elementwise list operation
-        xenTest("'(2, 4, 6) * '(1, 2, 3)", "'(2,8,18)", "list");
-        xenTest("'(1, 2, 3) * '(2, 4)", "error");
+        xenTest("[2, 4, 6] * [1, 2, 3]", "[2,8,18]", "list");
+        xenTest("[1, 2, 3] * [2, 4]", "error");
     },
     divide() {
         xenTest("12#12/19#19", "1",    "number");
@@ -256,12 +256,12 @@ const tests = {
         xenTest("4/400c",    "error");
 
         // list mapping
-        xenTest("4/'(1, 2, 4)", "'(4,2,1)", "list");
-        xenTest("'(4, 8, 12)/4", "'(1,2,3)", "list");
+        xenTest("4/[1, 2, 4]", "[4,2,1]", "list");
+        xenTest("[4, 8, 12]/4", "[1,2,3]", "list");
 
         // elementwise list operation
-        xenTest("'(2, 4, 6) / '(1, 2, 3)", "'(2,2,2)", "list");
-        xenTest("'(1, 2, 3) / '(2, 4)", "error");
+        xenTest("[2, 4, 6] / [1, 2, 3]", "[2,2,2]", "list");
+        xenTest("[1, 2, 3] / [2, 4]", "error");
     },
     mod() {
         xenTest("12#12%19#19", "0#12", "et");
@@ -301,12 +301,12 @@ const tests = {
         xenTest("4%400c",    "error");
 
         // list mapping
-        xenTest("4%'(1, 3, 5)", "'(0,1,4)", "list");
-        xenTest("'(4, 9, 11)%4", "'(0,1,3)", "list");
+        xenTest("4%[1, 3, 5]", "[0,1,4]", "list");
+        xenTest("[4, 9, 11]%4", "[0,1,3]", "list");
 
         // elementwise list operation
-        xenTest("'(5, 8, 19) % '(1, 3, 3)", "'(0,2,1)", "list");
-        xenTest("'(1, 2, 3) % '(2, 4)", "error");
+        xenTest("[5, 8, 19] % [1, 3, 3]", "[0,2,1]", "list");
+        xenTest("[1, 2, 3] % [2, 4]", "error");
     },
     ratio() {
         //// ratio() function
@@ -333,12 +333,12 @@ const tests = {
         xenTest("ratio(3,100c)","error");
 
         // list mapping
-        xenTest("ratio('(1, 3, 5),2)", "'(1:2,3:2,5:2)", "list");
-        xenTest("ratio(5,'(2, 4, 6))", "'(5:2,5:4,5:6)", "list");
+        xenTest("ratio([1, 3, 5],2)", "[1:2,3:2,5:2]", "list");
+        xenTest("ratio(5,[2, 4, 6])", "[5:2,5:4,5:6]", "list");
 
         // elementwise list operation
-        xenTest("ratio('(1, 3, 5),'(2, 4, 6))", "'(1:2,3:4,5:6)", "list");
-        xenTest("ratio('(1, 3, 5),'(4, 6))", "error");
+        xenTest("ratio([1, 3, 5],[2, 4, 6])", "[1:2,3:4,5:6]", "list");
+        xenTest("ratio([1, 3, 5],[4, 6])", "error");
     },
     colon() {
         //// colon operator
@@ -370,16 +370,16 @@ const tests = {
         xenTest(":19#19",  "2:1"); // :(19#19)
 
         // compound ratio shorthand
-        xenTest("4:5:6:7", "'(4:4,5:4,6:4,7:4)", "list");
+        xenTest("4:5:6:7", "[4:4,5:4,6:4,7:4]", "list");
         xenTest("4:(5:6)", "error");
         
         // list mapping
-        xenTest("'(4,5,7):6","'(4:6,5:6,7:6)", "list");
-        xenTest("6:'(4,5,7)","'(6:4,6:5,6:7)", "list");
+        xenTest("[4,5,7]:6","[4:6,5:6,7:6]", "list");
+        xenTest("6:[4,5,7]","[6:4,6:5,6:7]", "list");
 
         // elementwise list operation
-        xenTest("'(1, 3, 5):'(2, 4, 6)", "'(1:2,3:4,5:6)", "list");
-        xenTest("'(1, 3, 5):'(4, 6)", "error");
+        xenTest("[1, 3, 5]:[2, 4, 6]", "[1:2,3:4,5:6]", "list");
+        xenTest("[1, 3, 5]:[4, 6]", "error");
     },
     et() {
         //// et() function
@@ -415,12 +415,12 @@ const tests = {
 
 
         // list mapping
-        xenTest("et('(1, 3, 5),19)", "'(1#19,3#19,5#19)", "list");
-        xenTest("et(5,'(12, 19, 22))", "'(5#12,5#19,5#22)", "list");
+        xenTest("et([1, 3, 5],19)", "[1#19,3#19,5#19]", "list");
+        xenTest("et(5,[12, 19, 22])", "[5#12,5#19,5#22]", "list");
 
         // elementwise list operation
-        xenTest("et('(4, 6, 10),'(12, 19, 31))", "'(4#12,6#19,10#31)", "list");
-        xenTest("et('(1, 3, 5),'(4, 6))", "error");
+        xenTest("et([4, 6, 10],[12, 19, 31])", "[4#12,6#19,10#31]", "list");
+        xenTest("et([1, 3, 5],[4, 6])", "error");
     },
     hash() {
         //// hash operator
@@ -448,13 +448,13 @@ const tests = {
         xenTest("#19#19",  "12#12"); // #(19#19)
 
         // list mapping
-        xenTest("'(1, 3, 5)#19", "'(1#19,3#19,5#19)", "list");
-        xenTest("5#'(12, 19, 22)", "'(5#12,5#19,5#22)", "list");
+        xenTest("[1, 3, 5]#19", "[1#19,3#19,5#19]", "list");
+        xenTest("5#[12, 19, 22]", "[5#12,5#19,5#22]", "list");
 
         // elementwise list operation
-        xenTest("'(4, 6, 10)#'(12, 19, 31)", "'(4#12,6#19,10#31)", "list");
-        xenTest("'(1, 3, 5)#'(4, 6)", "error");
-        xenTest("#'(12, 19, 31)", "'(12#12,19#12,31#12)", "list");
+        xenTest("[4, 6, 10]#[12, 19, 31]", "[4#12,6#19,10#31]", "list");
+        xenTest("[1, 3, 5]#[4, 6]", "error");
+        xenTest("#[12, 19, 31]", "[12#12,19#12,31#12]", "list");
     },
     freq() {
         //// freq() function
@@ -467,7 +467,7 @@ const tests = {
         xenTest("freq(-5)",      "error");
 
         // list mapping
-        xenTest("freq('(#69, 300, 10hz))", "'(440hz,300hz,10hz)", "list");
+        xenTest("freq([#69, 300, 10hz])", "[440hz,300hz,10hz]", "list");
     },
     hz() {
         //// hz operator precedence less than # and :
@@ -485,7 +485,7 @@ const tests = {
         xenTest("400 hZ",     "400hz",   "freq");
 
         // list mapping
-        xenTest("'(#69, 300, 10hz)hz", "'(440hz,300hz,10hz)", "list");
+        xenTest("[#69, 300, 10hz]hz", "[440hz,300hz,10hz]", "list");
     },
     cents() {
         //// cents() function
@@ -498,7 +498,7 @@ const tests = {
         xenTest("cents(-5)",      "-5c",   "cents");
 
         // list mapping
-        xenTest("cents('(#69, 440hz, 6900))", "'(6900c,6900c,6900c)", "list");
+        xenTest("cents([#69, 440hz, 6900])", "[6900c,6900c,6900c]", "list");
     },
     c() {
         //// c operator precedence less than # and :
@@ -514,7 +514,7 @@ const tests = {
         xenTest("400 C",     "400c",  "cents").addExample("cents", "c operator is case-insensitive");
 
         // list mapping
-        xenTest("'(#69, 440hz, 6900) c", "'(6900c,6900c,6900c)", "list");
+        xenTest("[#69, 440hz, 6900] c", "[6900c,6900c,6900c]", "list");
     },
     js() {
         
@@ -531,8 +531,8 @@ const tests = {
                 return 56;
             }`, "56", "number");
         xenTest("a", "440");
-        xenTest("sum(#'(4, 5, 6, 7))", "22#12", "et");
-        xenTest("sum('(4, 5, 6, 7))",  "22", "number");
+        xenTest("sum(#[4, 5, 6, 7])", "22#12", "et");
+        xenTest("sum([4, 5, 6, 7])",  "22", "number");
     }
 }
 

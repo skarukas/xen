@@ -4,7 +4,9 @@
     (global = global || self, global.xen = factory());
 }(this, (function () { 'use strict';
 
-    /* import macros from "./xen-macros"; */
+    /**
+     * All these are constants which cannot be changed
+     */
 
     var waves = {
         saw: Symbol("sawtooth"),
@@ -18,8 +20,6 @@
      */
     const xen = {
         "...": Symbol("..."),
-        __functionsAsData: false,
-        ans: undefined,
         true: true,
         false: false,
         pi: Math.PI,
@@ -133,7 +133,7 @@
             }
         }
         toString() {
-            return `'(${super.toString()})`;
+            return `[${super.toString()}]`;
         }
         static from(arrlike) {
             return new XenList(...super.from(arrlike));
@@ -1094,6 +1094,7 @@
 
         symbol(",");
         symbol(")");
+        symbol("]");
         symbol("(end)");
 
         var interpretToken = function(token) {
@@ -1194,6 +1195,25 @@
                 };
             }
             return name;
+        });
+
+        prefix("[", 8, function() {
+            var args = [];
+            if (tokens[i].type !== "]") {
+                args.push(expression(2));
+                while (token().type === ",") {
+                    advance();
+                    args.push(expression(2));
+                }
+                let t = token();
+                if (t.type !== "]") throw "Expected closing bracket ']'";
+            } 
+            advance();
+            return {
+                type: "call",
+                args: args,
+                name: "list"
+            };
         });
 
         // macros are not parsed until evaluation
@@ -1686,7 +1706,7 @@
 
     function lex(input) {
         var isOperator = function(c) {
-                return /[+\-*\/\^%=(),:;\<>&|!#~]/.test(c);
+                return /[+\-*\/\^%=(),:;\<>&|\[\]!#~]/.test(c);
             },
             isDigit = function(c) {
                 return /[0-9]/.test(c);
@@ -1801,6 +1821,8 @@
      * - fix line break and semicolon seperate statements. 
      *    bottom of xen-console code should be able to be executed all in one go
      * - play(...) interprets the symbol as an unrecognized waveshape
+     * - unary definitions must work like binary defs, maybe have different functions for each
+     *    way os using an operator
      */
 
     // make the object's properties immutable
@@ -1841,7 +1863,15 @@
             xen[key].toString = () => key;
             xen[key].__refuseFunctionalInput = true;
         }
+        Object.defineProperty(xen, key,{
+            value: xen[key],
+            writable: false,
+            enumerable: true
+        });
     }
+
+    xen.ans = undefined;
+    xen.__functionsAsData = false;
 
     return external;
 

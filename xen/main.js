@@ -14,6 +14,8 @@
  * - fix line break and semicolon seperate statements. 
  *    bottom of xen-console code should be able to be executed all in one go
  * - play(...) interprets the symbol as an unrecognized waveshape
+ * - unary definitions must work like binary defs, maybe have different functions for each
+ *    way os using an operator
  */
 
 
@@ -72,6 +74,14 @@ for (let key in xen) {
         xen[key].toString = () => key;
         xen[key].__refuseFunctionalInput = true;
     }
+    Object.defineProperty(xen, key,{
+        value: xen[key],
+        writable: false,
+        enumerable: true
+    });
 }
+
+xen.ans = undefined;
+xen.__functionsAsData = false;
 
 export default external;

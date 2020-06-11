@@ -23,7 +23,7 @@ export class XenList extends Array {
         }
     }
     toString() {
-        return `'(${super.toString()})`;
+        return `[${super.toString()}]`;
     }
     static from(arrlike) {
         return new XenList(...super.from(arrlike));

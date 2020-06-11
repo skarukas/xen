@@ -222,6 +222,7 @@ export default function parse(tokens) {
 
     symbol(",");
     symbol(")");
+    symbol("]");
     symbol("(end)");
 
     var interpretToken = function(token) {
@@ -322,6 +323,25 @@ export default function parse(tokens) {
             };
         }
         return name;
+    });
+
+    prefix("[", 8, function() {
+        var args = [];
+        if (tokens[i].type !== "]") {
+            args.push(expression(2));
+            while (token().type === ",") {
+                advance();
+                args.push(expression(2));
+            }
+            let t = token();
+            if (t.type !== "]") throw "Expected closing bracket ']'";
+        } 
+        advance();
+        return {
+            type: "call",
+            args: args,
+            name: "list"
+        };
     });
 
     // macros are not parsed until evaluation
