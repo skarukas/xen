@@ -544,6 +544,14 @@
         }
     });
 
+    xen.getIndex = function(list, idx) {
+        assertDefined(2, arguments);
+        
+        let retrieve = (i) => (i >= 0)? list[i] : list[list.length + i];
+
+        return (idx.length)? idx.map(retrieve) : retrieve(idx);
+    };
+
     xen.add = elementWise(mapList(function(a, b) {
         assertDefined(1, arguments);
 
@@ -1195,6 +1203,17 @@
                 };
             }
             return name;
+        });
+
+        postfix("[", 8, function(left) {
+            let idx = expression(2);
+            if (token().type !== "]") throw "Expected closing bracket ']'";
+            advance();
+            return {
+                type: "call",
+                args: [left, idx],
+                name: "getIndex"
+            };
         });
 
         prefix("[", 8, function() {

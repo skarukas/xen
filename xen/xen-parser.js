@@ -325,6 +325,17 @@ export default function parse(tokens) {
         return name;
     });
 
+    postfix("[", 8, function(left) {
+        let idx = expression(2);
+        if (token().type !== "]") throw "Expected closing bracket ']'";
+        advance();
+        return {
+            type: "call",
+            args: [left, idx],
+            name: "getIndex"
+        };
+    });
+
     prefix("[", 8, function() {
         var args = [];
         if (tokens[i].type !== "]") {

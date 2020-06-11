@@ -172,3 +172,11 @@ xen.ftom = mapList(function(a, b) {
         ${givenVals(a, b)}`);
     }
 });
+
+xen.getIndex = function(list, idx) {
+    assertDefined(2, arguments);
+    
+    let retrieve = (i) => (i >= 0)? list[i] : list[list.length + i];
+
+    return (idx.length)? idx.map(retrieve) : retrieve(idx);
+}
