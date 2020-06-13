@@ -7,17 +7,19 @@ let waveshape = "sawtooth";
 
 xen.playback = function(freqs, shape) {
     waveshape = shape || waveshape;
+    let numVoices = freqs.length;
     //audioOn || initAudio();
-    for (let i = 0; i < freqs.length; i++) {
+    for (let i = 0; i < numVoices; i++) {
         let freq = freqs[i];
         if (freq < 20 || freq > 20000) {
             throw new RangeError(`Cannot play frequencies outside human hearing range.
             Given: ${freq} Hz.`);
         }
-        let frac = (i+1) / (freqs.length + 1);
+        let frac = (i+1) / (numVoices + 1);
         let pan = frac * 2 * stereoWidth - stereoWidth;
         let envelope = new ADSR(0.2, 0, 1, 1);
-        playNote(freq, 2, 0.5, envelope, pan);
+        //console.log(freq);
+        playNote(freq, 10, 1 / numVoices, envelope, pan);
     }
 }
 
@@ -79,8 +81,9 @@ function playNote(f, dur, maxGain, envelope, pan) {
     osc.start();
     osc.stop(end + envelope.release);
     
-
-
+    osc.onended = function() {
+        osc.disconnect();
+    }
 }
 
 class ADSR {

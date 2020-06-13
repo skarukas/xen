@@ -16,6 +16,7 @@
  * - play(...) interprets the symbol as an unrecognized waveshape
  * - unary definitions must work like binary defs, maybe have different functions for each
  *    way os using an operator
+ * - allow assignment to list indexes
  */
 
 

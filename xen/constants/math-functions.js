@@ -233,6 +233,15 @@ xen.random = function(n) {
     return result;
 }
 
+xen.range = function(n, m) {
+    if (m == undefined) m = n, n = 0;
+
+    let result = xen.list(); 
+    if (n < m) while (n <= m) result.push(n++); 
+    else while (n >= m) result.push(n--); 
+    return result;
+}
+
 xen.and = (a, b) => a && b
 xen.or = (a, b) => a || b
 xen.not = (_, a) => !a;

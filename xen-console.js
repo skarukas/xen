@@ -359,10 +359,7 @@ b = 5:4
 
 evaluate(`
 operator (n -> m) 9 { 
-    let result = []; 
-    if (n < m) while (n <= m) result.push(n++); 
-    else while (n >= m) result.push(n--); 
-    return result; 
+    return range(n, m);
 }`);
 
 evaluate(`

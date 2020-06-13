@@ -546,8 +546,17 @@
 
     xen.getIndex = function(list, idx) {
         assertDefined(2, arguments);
-        
-        let retrieve = (i) => (i >= 0)? list[i] : list[list.length + i];
+
+        let retrieve = function(i) { 
+            if (i % 1 == 0) return (i >= 0)? list[i] : list[list.length + i];
+            else {
+                if (i < 0) {
+                    return list.slice(list.length - xen.floor(-i * list.length));
+                } else {
+                    return list.slice(0, xen.floor(i * list.length));
+                }
+            }
+        };
 
         return (idx.length)? idx.map(retrieve) : retrieve(idx);
     };
@@ -779,6 +788,15 @@
         if (!n) return Math.random();
         let result = xen.list();
         while (n-- > 0) result.push(Math.random());
+        return result;
+    };
+
+    xen.range = function(n, m) {
+        if (m == undefined) m = n, n = 0;
+
+        let result = xen.list(); 
+        if (n < m) while (n <= m) result.push(n++); 
+        else while (n >= m) result.push(n--); 
         return result;
     };
 
@@ -1842,6 +1860,7 @@
      * - play(...) interprets the symbol as an unrecognized waveshape
      * - unary definitions must work like binary defs, maybe have different functions for each
      *    way os using an operator
+     * - allow assignment to list indexes
      */
 
     // make the object's properties immutable

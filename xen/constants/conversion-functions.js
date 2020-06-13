@@ -175,8 +175,17 @@ xen.ftom = mapList(function(a, b) {
 
 xen.getIndex = function(list, idx) {
     assertDefined(2, arguments);
-    
-    let retrieve = (i) => (i >= 0)? list[i] : list[list.length + i];
+
+    let retrieve = function(i) { 
+        if (i % 1 == 0) return (i >= 0)? list[i] : list[list.length + i];
+        else {
+            if (i < 0) {
+                return list.slice(list.length - xen.floor(-i * list.length));
+            } else {
+                return list.slice(0, xen.floor(i * list.length));
+            }
+        }
+    };
 
     return (idx.length)? idx.map(retrieve) : retrieve(idx);
 }
