@@ -82,6 +82,7 @@ for (let key in xen) {
     });
 }
 
+xen.getIndex.__refuseFunctionalInput = false;
 xen.ans = undefined;
 xen.__functionsAsData = false;
 

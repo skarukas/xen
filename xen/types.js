@@ -11,23 +11,8 @@ export class Cents extends tune.ETInterval {
         return this.cents() + "c";
     }
 }
-
-export class XenList extends Array {
-    constructor(...args) {
-        if (args.length == 1) {
-            // prevent calling the Array(arrLength) constructor
-            super(1)
-            this[0] = args[0];
-        } else {
-            super(...args);
-        }
-    }
-    toString() {
-        return `[${super.toString()}]`;
-    }
-    static from(arrlike) {
-        return new XenList(...super.from(arrlike));
-    }
+Array.prototype.toString = function() {
+    return `[${this.join(", ")}]`;
 }
 
 // change display

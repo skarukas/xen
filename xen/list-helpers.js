@@ -1,5 +1,4 @@
 import { displayType, givenVals } from "./helpers";
-import { XenList } from "./types";
 
 /**
  * Takes a function and turns it into a version that applies 
@@ -38,7 +37,7 @@ export function elementWise(fn) {
                 }
                 result.push(fn(...row));
             }
-            return XenList.from(result);
+            return result;
         } else {
             return fn(...args);
         }

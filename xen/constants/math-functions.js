@@ -201,10 +201,8 @@ function abstractCompare(a, b, comp) {
             ${givenVals(a, b)}`);
         }
     }));
-
-    let result = inner(a, b);
-    if (displayType(result) == 'list') result = result.every(e => e);
-    return result;
+    
+    return inner(a, b);
 }
 
 

@@ -44,7 +44,6 @@
         "FreqRatio": "ratio",
         "Cents": "cents",
         "Frequency": "freq",
-        "XenList": "list",
         "Array": "list",
         "Symbol": "waveshape",
         "Function": "function"
@@ -108,46 +107,6 @@
         return result;
     }
 
-    // Cents class not defined in tune
-    class Cents extends tune.ETInterval {
-        // TAKES IN THE NUMBER OF STEPS!!
-        constructor(c) {
-            super(c);
-        }
-        static fromCount(n) {
-            return new Cents(n / 100);
-        }
-        toString() {
-            return this.cents() + "c";
-        }
-    }
-
-    class XenList extends Array {
-        constructor(...args) {
-            if (args.length == 1) {
-                // prevent calling the Array(arrLength) constructor
-                super(1);
-                this[0] = args[0];
-            } else {
-                super(...args);
-            }
-        }
-        toString() {
-            return `[${super.toString()}]`;
-        }
-        static from(arrlike) {
-            return new XenList(...super.from(arrlike));
-        }
-    }
-
-    // change display
-    tune.Frequency.prototype.toString = function() {
-        return tune.Util.round(this.freq, 2) + "hz";
-    };
-    tune.ETInterval.prototype.toString = function() {
-        return tune.Util.round(this.n, 2) + "#" + tune.Util.round(this.d, 2);
-    };
-
     /**
      * Takes a function and turns it into a version that applies 
      * it to all elements if the first input is a list.
@@ -185,7 +144,7 @@
                     }
                     result.push(fn(...row));
                 }
-                return XenList.from(result);
+                return result;
             } else {
                 return fn(...args);
             }
@@ -374,6 +333,31 @@
         return edo;
     };
 
+    // Cents class not defined in tune
+    class Cents extends tune.ETInterval {
+        // TAKES IN THE NUMBER OF STEPS!!
+        constructor(c) {
+            super(c);
+        }
+        static fromCount(n) {
+            return new Cents(n / 100);
+        }
+        toString() {
+            return this.cents() + "c";
+        }
+    }
+    Array.prototype.toString = function() {
+        return `[${this.join(", ")}]`;
+    };
+
+    // change display
+    tune.Frequency.prototype.toString = function() {
+        return tune.Util.round(this.freq, 2) + "hz";
+    };
+    tune.ETInterval.prototype.toString = function() {
+        return tune.Util.round(this.n, 2) + "#" + tune.Util.round(this.d, 2);
+    };
+
     xen.__colon = function(a, b) {
         assertDefined(1, arguments);
         // creating compound ratios, e.g. 4:5:6:7:11
@@ -502,7 +486,7 @@
             if (arg instanceof Function) throw `TypeError: Cannot create a list of functions.
         ${givenVals(...args)}`;
         }
-        return new XenList(...args);
+        return args;
     };
 
     xen["'"] = xen.list;
@@ -547,13 +531,19 @@
     xen.getIndex = function(list, idx) {
         assertDefined(2, arguments);
 
-        let retrieve = function(i) { 
-            if (i % 1 == 0) return (i >= 0)? list[i] : list[list.length + i];
+        if (idx instanceof Function) return list.filter(idx);
+
+        if (idx.length && typeof idx[0] == 'boolean') {
+            return list.filter((e, i) => idx[i]);
+        }
+
+        let retrieve = function(e) { 
+            if (e % 1 == 0) return (e >= 0)? list[e] : list[list.length + e];
             else {
-                if (i < 0) {
-                    return list.slice(list.length - xen.floor(-i * list.length));
+                if (e < 0) {
+                    return list.slice(list.length - xen.floor(-e * list.length));
                 } else {
-                    return list.slice(0, xen.floor(i * list.length));
+                    return list.slice(0, xen.floor(e * list.length));
                 }
             }
         };
@@ -759,10 +749,8 @@
             ${givenVals(a, b)}`);
             }
         }));
-
-        let result = inner(a, b);
-        if (displayType(result) == 'list') result = result.every(e => e);
-        return result;
+        
+        return inner(a, b);
     }
 
 
@@ -1908,6 +1896,7 @@
         });
     }
 
+    xen.getIndex.__refuseFunctionalInput = false;
     xen.ans = undefined;
     xen.__functionsAsData = false;
 

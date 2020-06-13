@@ -1,6 +1,6 @@
 import { assertDefined, givenVals, displayType, isInterval } from "../helpers";
 import { mapList, elementWise } from "../list-helpers";
-import { XenList, Cents } from "../types";
+import { Cents } from "../types";
 import xen from "../constants";
 
 xen.__colon = function(a, b) {
@@ -131,7 +131,7 @@ xen.list = function(...args) {
         if (arg instanceof Function) throw `TypeError: Cannot create a list of functions.
         ${givenVals(...args)}`;
     }
-    return new XenList(...args);
+    return args;
 }
 
 xen["'"] = xen.list;
@@ -176,13 +176,19 @@ xen.ftom = mapList(function(a, b) {
 xen.getIndex = function(list, idx) {
     assertDefined(2, arguments);
 
-    let retrieve = function(i) { 
-        if (i % 1 == 0) return (i >= 0)? list[i] : list[list.length + i];
+    if (idx instanceof Function) return list.filter(idx);
+
+    if (idx.length && typeof idx[0] == 'boolean') {
+        return list.filter((e, i) => idx[i]);
+    }
+
+    let retrieve = function(e) { 
+        if (e % 1 == 0) return (e >= 0)? list[e] : list[list.length + e];
         else {
-            if (i < 0) {
-                return list.slice(list.length - xen.floor(-i * list.length));
+            if (e < 0) {
+                return list.slice(list.length - xen.floor(-e * list.length));
             } else {
-                return list.slice(0, xen.floor(i * list.length));
+                return list.slice(0, xen.floor(e * list.length));
             }
         }
     };
