@@ -891,198 +891,6 @@
      * - TODO: clean up this disgusting thing
      */
 
-    //  ********* PARSER *********
-    /* 
-    const parser = {};
-    export default parser;
-
-    parser.infix = function(id, lbp, rbp, led) {
-        rbp = rbp || lbp;
-        symbol(id, lbp, null, led ||
-        function(left) {
-            return {
-                type: id,
-                left: left,
-                right: expression(rbp)
-            };
-        });
-    };
-    parser.prefix = function(id, rbp, nud) {
-        symbol(id, null, nud ||
-        function() {
-            return {
-                type: id,
-                right: expression(rbp)
-            };
-        });
-    };
-    parser.postfix = function(id, lbp, led) {
-        symbol(id, lbp, null, led ||
-        function (left) {
-            return {
-                type: id,
-                left: left
-            };
-        });
-    };
-
-    var symbols = {};
-    function symbol(id, lbp, nud, led) {
-        if (!symbols[id]) {
-            symbols[id] = {
-                lbp: lbp,
-                nud: nud,
-                led: led
-            };
-        }
-        else {
-            if (nud) symbols[id].nud = nud;
-            if (led) symbols[id].led = led;
-            if (lbp) symbols[id].lbp = lbp;
-        }
-    }
-
-
-    function interpretToken(token) {
-        var F = function() {};
-        F.prototype = symbols[token.type];
-        var sym = new F;
-        sym.type = token.type;
-        sym.value = token.value;
-        return sym;
-    };
-
-    symbol(",");
-    symbol(")");
-    symbol("(end)");
-
-    var expression = function(rbp) {
-        var left, t = token();
-        advance();
-        if (!t.nud) throw "Unexpected token: " + t.type;
-        left = t.nud(t);
-        while (rbp < token().lbp) {
-            t = token();
-            advance();
-            if (!t.led) throw "Unexpected token: " + t.type;
-            left = t.led(left);
-        }
-        return left;
-    };
-
-    let tokens;
-
-    var i = 0,
-        token = function() {
-            return interpretToken(tokens[i]);
-        };
-    var advance = function() {
-        i++;
-        return token();
-    };
-
-
-    parser.parse = function(tokenArr) {
-        tokens = tokenArr;
-
-        var parseTree = [];
-        while (token().type !== "(end)") {
-            parseTree.push(expression(0));
-        }
-        return parseTree;
-    };
-
-
-    parser.prefix("identifier", 9, function(name) {
-        if (token().type === "(") {
-            var args = [];
-            if (tokens[i + 1].type === ")") advance();
-            else {
-                do {
-                    advance();
-                    args.push(expression(2));
-                } while (token().type === ",");
-                if (token().type !== ")") throw "Expected closing parenthesis ')'";
-            }
-            advance();
-            return {
-                type: "call",
-                args: args,
-                name: name.value
-            };
-        }
-        return name;
-    });
-
-    parser.prefix("(", 8, function() {
-        let value = expression(2);
-        if (token().type !== ")") throw "Expected closing parenthesis ')'";
-        advance();
-        return value;
-    });
-
-
-    parser.infix("=", 1, 2, function(left) {
-        if (left.type === "call") {
-            for (var i = 0; i < left.args.length; i++) {
-                if (left.args[i].type !== "identifier") throw "Invalid argument name";
-            }
-            return {
-                type: "function",
-                name: left.name,
-                args: left.args,
-                value: expression(2)
-            };
-        } else if (left.type === "identifier") {
-            return {
-                type: "assign",
-                name: left.value,
-                value: expression(2)
-            };
-        }
-        else throw "Invalid lvalue";
-    });
-
-    parser.prefix("number", 9, function(number) {
-        return number;
-    });
-
-    // macros are not parsed until evaluation
-    parser.prefix("macro", 9, (data) => data); */
-
-    /* export const prefixes = {
-        "#": 7,
-        ":": 7,
-        //unary operators
-        "-": 6.5,
-        "+": 6.5,
-        "!": 6.5,
-    };
-    export const infixes = {
-        ":": 7.5,
-        "#": 7.3,
-        "^": [6, 5],
-        "*": 4,
-        "/": 4,
-        "%": 4,
-        "+": 3,
-        "-": 3,
-        ">": 2.80,
-        "<": 2.80,
-        ">=": 2.80,
-        "<=": 2.80,
-        "==": 2.70,
-        "!=": 2.70,
-        "&&": 2.65,
-        "||": 2.60,
-    };
-    export const postfixes = {
-        "c": 6.8,
-        "hz": 6.8,
-        "~": 2.5,
-        ";": 1,
-    }; */
-
     const prefixes = {};
     const infixes = {};
     const postfixes = {};
@@ -1430,9 +1238,37 @@
             //console.log("unbreaking");
             return result;
         };
+
+        let i = 0;
+        let output = foldTree().map((e) => ({value: (typeof value == 'symbol')? e.description : e, type: displayType(e)}));
+
+        // this exists to allow reduction of functions in postfix notation
+        function foldTree() {
+            let values = [];
+            for (; i < parseTree.length; i++) {
+                let node = parseTree[i];
+                var value = parseNode(node);
+                if (value instanceof Function) {
+                    let args = [];
+                    i++;
+                    args = foldTree(); // recursively fold the rest
+                    //while (++i < parseTree.length) args.push(parseNode(parseTree[i]));
+                    value = args.length? call(value, args) : value;
+                }
+        
+                if (typeof value !== "undefined") {
+                    // store answer
+                    xen.ans = value;
+                    /* if (typeof value == 'symbol') values.push(value.description);
+                    else  */values.push(value);
+                }
+            }
+            return values;
+        }
+        
         //console.log("Evaling tree:",parseTree);
         // eval the parseTree, returning all vals in an array of value-type pairs
-        let output = parseTree.map((node) => {
+    /*     let output = parseTree.map((node) => {
             var value = parseNode(node);
             if (typeof value !== "undefined") {
                 let type = displayType(value);
@@ -1441,7 +1277,7 @@
                 if (typeof value == 'symbol') return {value: value.description, type};
                 else return {value, type};
             }
-        });
+        }); */
         if (xen.__return != undefined) return [{value: xen.__return, type: displayType(xen.__return)}];
         else return output;
     }
@@ -1494,7 +1330,7 @@
             }
             f.toString = () => displayString;
         } else {
-            f.toString = () => `${name}(${args.map(displayPartial)})`;
+            f.toString = () => `${name}(${args.map(displayPartial).join(", ")})`;
         }
 
         return f;
@@ -1871,8 +1707,7 @@
 
     xen.print = (...args) => {
         // convert to value/type pairs
-        args = args.map(value => ({value, type: displayType(value)}));
-        external.print(...args);
+        args.map(value => external.print({value, type: displayType(value)}));
     };
 
     xen.xen_eval = (str) => {

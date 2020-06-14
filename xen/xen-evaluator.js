@@ -57,9 +57,37 @@ export default function evaluate(parseTree) {
         //console.log("unbreaking");
         return result;
     };
+
+    let i = 0;
+    let output = foldTree().map((e) => ({value: (typeof value == 'symbol')? e.description : e, type: displayType(e)}));
+
+    // this exists to allow reduction of functions in postfix notation
+    function foldTree() {
+        let values = [];
+        for (; i < parseTree.length; i++) {
+            let node = parseTree[i];
+            var value = parseNode(node);
+            if (value instanceof Function) {
+                let args = [];
+                i++;
+                args = foldTree(); // recursively fold the rest
+                //while (++i < parseTree.length) args.push(parseNode(parseTree[i]));
+                value = args.length? call(value, args) : value;
+            }
+    
+            if (typeof value !== "undefined") {
+                // store answer
+                xen.ans = value;
+                /* if (typeof value == 'symbol') values.push(value.description);
+                else  */values.push(value);
+            }
+        }
+        return values;
+    }
+    
     //console.log("Evaling tree:",parseTree);
     // eval the parseTree, returning all vals in an array of value-type pairs
-    let output = parseTree.map((node) => {
+/*     let output = parseTree.map((node) => {
         var value = parseNode(node);
         if (typeof value !== "undefined") {
             let type = displayType(value);
@@ -68,7 +96,7 @@ export default function evaluate(parseTree) {
             if (typeof value == 'symbol') return {value: value.description, type};
             else return {value, type};
         }
-    });
+    }); */
     if (xen.__return != undefined) return [{value: xen.__return, type: displayType(xen.__return)}];
     else return output;
 };
@@ -122,7 +150,7 @@ function partialFunction(fn, args, name = fn.name, operator) {
         }
         f.toString = () => displayString;
     } else {
-        f.toString = () => `${name}(${args.map(displayPartial)})`;
+        f.toString = () => `${name}(${args.map(displayPartial).join(", ")})`;
     }
 
     return f;

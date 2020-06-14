@@ -57,8 +57,7 @@ const external = {
 
 xen.print = (...args) => {
     // convert to value/type pairs
-    args = args.map(value => ({value, type: displayType(value)}));
-    external.print(...args);
+    args.map(value => external.print({value, type: displayType(value)}));
 }
 
 xen.xen_eval = (str) => {
