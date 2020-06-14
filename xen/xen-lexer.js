@@ -94,7 +94,7 @@ export default function lex(input) {
                 addToken("macro", {macroId: idn, pre, block});
             } else if (idn.toLowerCase() == "c")  addToken("c");
             else if (idn.toLowerCase() == "hz")   addToken("hz");
-            else addToken("identifier", idn);
+            else addToken((input[i] == "(")? "call" : "identifier", idn);
         } else {
             throw "Unrecognized token.";
         }

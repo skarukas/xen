@@ -997,20 +997,39 @@
         prefix("number", 9, function(number) {
             return number;
         });
+
+        prefix("call", 9, function (name) {
+            var args = [];
+            if (tokens[i + 1].type === ")") advance();
+            else {
+                do {
+                    advance();
+                    args.push(expression(2));
+                } while (token().type === ",");
+                if (token().type !== ")") throw "Expected closing parenthesis ')'";
+            }
+            advance();
+            return {
+                type: "call",
+                args: args,
+                name: name.value
+            };
+        });
         
         prefix("identifier", 9, function(name) {
-            if (token().type === "(") {
-                var args = [];
-                if (tokens[i + 1].type === ")") advance();
-                else {
-                    do {
-                        advance();
-                        args.push(expression(2));
-                    } while (token().type === ",");
-                    if (token().type !== ")") throw "Expected closing parenthesis ')'";
+            if (xen[name.value] instanceof Function) {
+                let args = [];
+                try {
+                    while (!([")", "(end)", ";", "]"].includes(token().type))) {
+                        args.push(expression(1));
+                    }
+                } catch (e) {
+                    // we got too greedy, so back up and hope that there were no side effects :0
+                    if (!(e.includes && e.includes("Unexpected token:"))) throw e;
+                    i--;
                 }
-                advance();
-                return {
+                
+                return (!args.length)? name : {
                     type: "call",
                     args: args,
                     name: name.value
@@ -1238,37 +1257,9 @@
             //console.log("unbreaking");
             return result;
         };
-
-        let i = 0;
-        let output = foldTree().map((e) => ({value: (typeof value == 'symbol')? e.description : e, type: displayType(e)}));
-
-        // this exists to allow reduction of functions in postfix notation
-        function foldTree() {
-            let values = [];
-            for (; i < parseTree.length; i++) {
-                let node = parseTree[i];
-                var value = parseNode(node);
-                if (value instanceof Function) {
-                    let args = [];
-                    i++;
-                    args = foldTree(); // recursively fold the rest
-                    //while (++i < parseTree.length) args.push(parseNode(parseTree[i]));
-                    value = args.length? call(value, args) : value;
-                }
         
-                if (typeof value !== "undefined") {
-                    // store answer
-                    xen.ans = value;
-                    /* if (typeof value == 'symbol') values.push(value.description);
-                    else  */values.push(value);
-                }
-            }
-            return values;
-        }
-        
-        //console.log("Evaling tree:",parseTree);
         // eval the parseTree, returning all vals in an array of value-type pairs
-    /*     let output = parseTree.map((node) => {
+        let output = parseTree.map((node) => {
             var value = parseNode(node);
             if (typeof value !== "undefined") {
                 let type = displayType(value);
@@ -1277,7 +1268,7 @@
                 if (typeof value == 'symbol') return {value: value.description, type};
                 else return {value, type};
             }
-        }); */
+        });
         if (xen.__return != undefined) return [{value: xen.__return, type: displayType(xen.__return)}];
         else return output;
     }
@@ -1657,7 +1648,7 @@
                     addToken("macro", {macroId: idn, pre, block});
                 } else if (idn.toLowerCase() == "c")  addToken("c");
                 else if (idn.toLowerCase() == "hz")   addToken("hz");
-                else addToken("identifier", idn);
+                else addToken((input[i] == "(")? "call" : "identifier", idn);
             } else {
                 throw "Unrecognized token.";
             }

@@ -411,3 +411,5 @@ macro for {
     
     xen_variables[varName] = temp;
 }`);
+
+evaluate(`multiply (add 4 5) (add 5 6)`);
