@@ -4,7 +4,7 @@ import macros from "./macros";
 import xen from "./constants";
 import { displayType } from "./helpers";
 
-var args = {};
+export var globalArgs = {};
 
 export default function evaluate(parseTree) {
     xen.__break = false;
@@ -26,7 +26,7 @@ export default function evaluate(parseTree) {
 
             result = call(fn, args, "", node.type);
         } else if (node.type === "identifier") {
-            var value = args.hasOwnProperty(node.value) ? args[node.value] : xen[node.value];
+            var value = globalArgs.hasOwnProperty(node.value) ? globalArgs[node.value] : xen[node.value];
             if (typeof value === "undefined") throw node.value + " is undefined";
             if (value instanceof Function && !xen.__functionsAsData) throw new SyntaxError(`Missing parentheses in call to ${node.value}()`);
             result = value;
@@ -42,10 +42,10 @@ export default function evaluate(parseTree) {
         } else if (node.type === "function") {
             xen[node.name] = function() {
                 for (var i = 0; i < node.args.length; i++) {
-                    args[node.args[i].value] = arguments[i];
+                    globalArgs[node.args[i].value] = arguments[i];
                 }
                 var ret = parseNode(node.value);
-                args = {};
+                globalArgs = {};
                 return ret;
             };
         } else if (node.type === "macro") {

@@ -413,3 +413,10 @@ macro for {
 }`);
 
 evaluate(`multiply (add 4 5) (add 5 6)`);
+
+evaluate(`
+operator a +> b { 
+    a = (a instanceof Array)? a : [a]; 
+    b = (b instanceof Array)? b : [b]; 
+    return a.concat(b); }
+`)

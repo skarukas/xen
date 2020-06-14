@@ -1,5 +1,5 @@
 import xen from "./constants";
-import args from "./xen-evaluator";
+import {globalArgs as args} from "./xen-evaluator";
 import { addInfixOperator, addPostfixOperator, addPrefixOperator } from "./operators";
 
 // stores all available macros

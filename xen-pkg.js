@@ -1204,7 +1204,7 @@
 
     //  ********* EVALUATOR *********
 
-    var args = {};
+    var globalArgs = {};
 
     function evaluate(parseTree) {
         xen.__break = false;
@@ -1226,7 +1226,7 @@
 
                 result = call(fn, args, "", node.type);
             } else if (node.type === "identifier") {
-                var value = args.hasOwnProperty(node.value) ? args[node.value] : xen[node.value];
+                var value = globalArgs.hasOwnProperty(node.value) ? globalArgs[node.value] : xen[node.value];
                 if (typeof value === "undefined") throw node.value + " is undefined";
                 if (value instanceof Function && !xen.__functionsAsData) throw new SyntaxError(`Missing parentheses in call to ${node.value}()`);
                 result = value;
@@ -1242,10 +1242,10 @@
             } else if (node.type === "function") {
                 xen[node.name] = function() {
                     for (var i = 0; i < node.args.length; i++) {
-                        args[node.args[i].value] = arguments[i];
+                        globalArgs[node.args[i].value] = arguments[i];
                     }
                     var ret = parseNode(node.value);
-                    args = {};
+                    globalArgs = {};
                     return ret;
                 };
             } else if (node.type === "macro") {
@@ -1380,7 +1380,7 @@
         }
 
         try {
-            return executeBlock(xen, evaluate);
+            return executeBlock(xen, globalArgs);
         } catch(e) {
             throw "Error Running JavaScript.\n" + e;
         }
@@ -1484,7 +1484,7 @@
         }
 
         try {
-            macros[name] = generateBlockFn(xen, evaluate);
+            macros[name] = generateBlockFn(xen, globalArgs);
         } catch(e) {
             throw "Error Running JavaScript.\n" + e;
         }
@@ -1534,7 +1534,7 @@
         }
     }`);
 
-        let fn = generateFunction(xen, evaluate, a, b);
+        let fn = generateFunction(xen, globalArgs, a, b);
 
         if (!a && !b) throw new SyntaxError("Incorrect operator syntax.");
         else if (!a) addPrefixOperator(op, bp, fn, true);
